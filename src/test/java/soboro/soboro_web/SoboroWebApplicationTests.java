@@ -8,6 +8,7 @@ class SoboroWebApplicationTests {
 
 	@Test
 	void contextLoads() {
+
 	}
 
 }

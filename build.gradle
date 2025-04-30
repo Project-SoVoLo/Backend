@@ -15,6 +15,9 @@ java {
 
 repositories {
 	mavenCentral()
+	maven {
+		url "https://repo1.maven.org/maven2"
+	}
 }
 
 ext {
@@ -26,12 +29,14 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
-	implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter'
+//	implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter'
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'io.projectreactor:reactor-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+//	compileOnly 'org.project-lombok:lombok:1.18.30'
+//	annotationProcessor 'org.project-lombok:lombok:1.18.30'
 }
 
 dependencyManagement {
