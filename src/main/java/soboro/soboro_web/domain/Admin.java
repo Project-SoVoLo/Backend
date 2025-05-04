@@ -5,20 +5,20 @@ import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.List;
+
 @Getter
 @Setter
-@Document(collection = "users")
-public class User {
+@Document(collection="admin")
+public class Admin {
     @Id
-    private String userId;         // DB에서 사용되는 기본 데이터의 id
+    private String adminId;     // DB에서 사용되는 기본 데이터의 id
 
     // 사용자 속성 정의
     private String userEmail;   // 로그인 시 사용하는 이메일
     private String password;    // 로그인 시 사용하는 비밀번호
 
     private String userName;
-    private String nickname;
-    private int userBirth;
-    private String userGender;
-    private int userPhone;
+
+    private List<Inquiry> incompletePost;   // 답변 안한 문의게시글 리스트
 }

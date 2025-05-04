@@ -35,8 +35,9 @@ dependencies {
 	testImplementation 'io.projectreactor:reactor-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-//	compileOnly 'org.project-lombok:lombok:1.18.30'
-//	annotationProcessor 'org.project-lombok:lombok:1.18.30'
+	compileOnly 'org.projectlombok:lombok:1.18.30'
+	annotationProcessor 'org.projectlombok:lombok:1.18.30'
+	testImplementation 'org.projectlombok:lombok:1.18.34'
 }
 
 dependencyManagement {
