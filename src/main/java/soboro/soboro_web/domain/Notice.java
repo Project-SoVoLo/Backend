@@ -10,7 +10,6 @@ import java.util.List;
 @Setter
 @Document(collection="notice")
 public class Notice extends Post {
-    @Id
     private String adminId;
     private List<Like> likes;
 }

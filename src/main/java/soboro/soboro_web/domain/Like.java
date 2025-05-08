@@ -13,5 +13,4 @@ public class Like {
     private String likeId;  // 자동생성된 _id
     private String userId;
     private String postId;
-
 }

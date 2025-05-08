@@ -11,7 +11,6 @@ import java.util.List;
 @Setter
 @Document(collection="card")
 public class Card extends Post {
-    @Id
     private String adminId;
     private byte[] image;
     private List<Bookmark> bookmarks;

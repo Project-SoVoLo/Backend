@@ -11,7 +11,6 @@ import java.util.List;
 @Setter
 @Document(collection = "community")
 public class Community extends Post{
-    @Id
     private String userId;
     private List<Like> likes;
     private List<Comment> comments;

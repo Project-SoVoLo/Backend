@@ -21,4 +21,6 @@ public class User {
     private int userBirth;
     private String userGender;
     private int userPhone;
+
+    public User() {}
 }

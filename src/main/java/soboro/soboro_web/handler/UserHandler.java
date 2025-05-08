@@ -1,6 +1,5 @@
 package soboro.soboro_web.handler;
 
-import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.*;
 import reactor.core.publisher.Mono;
@@ -16,7 +15,7 @@ public class UserHandler {
     }
 
     public Mono<ServerResponse> saveUser(ServerRequest request) {
-        return request.bodyToMono(User.class)
+        return request.bodyToMono(soboro.soboro_web.domain.User.class)
                 .flatMap(userRepository::save)
                 .flatMap(user -> ServerResponse.ok().bodyValue(user));
     }

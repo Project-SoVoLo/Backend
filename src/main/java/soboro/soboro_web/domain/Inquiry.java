@@ -10,7 +10,6 @@ import java.util.List;
 @Setter
 @Document(collection = "inquiry")
 public class Inquiry extends Post {
-    @Id
     private String userId;
     private String password;
     private List<Comment> comments;
