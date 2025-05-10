@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import soboro.soboro_web.domain.enums.EmotionTypes;
 
 @Getter
 @Setter
@@ -21,6 +22,8 @@ public class User {
     private int userBirth;
     private String userGender;
     private int userPhone;
+
+    private EmotionTypes emotionStatus;     // 현재 사용자의 감정 상태 (긍정, 중립, 부정)
 
     public User() {}
 }
