@@ -21,7 +21,7 @@ public class User {
     private String nickname;
     private int userBirth;
     private String userGender;
-    private int userPhone;
+    private String userPhone;      // 11자리 숫자이므로 string 사용으로 변경
 
     private EmotionTypes emotionStatus;     // 현재 사용자의 감정 상태 (긍정, 중립, 부정)
 
