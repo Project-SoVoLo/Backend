@@ -26,4 +26,12 @@ public class User {
     private EmotionTypes emotionStatus;     // 현재 사용자의 감정 상태 (긍정, 중립, 부정)
 
     public User() {}
+
+    // 카카오 로그인 시 추가 정보 기입
+    public User(String email, String nickname) {
+        this.userEmail = email;
+        this.nickname = nickname;
+        this.userName = nickname;
+        this.emotionStatus = EmotionTypes.NEUTRAL;
+    }
 }

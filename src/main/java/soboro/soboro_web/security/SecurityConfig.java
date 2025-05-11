@@ -17,6 +17,7 @@ public class SecurityConfig {
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(ex -> ex
                         .pathMatchers("/api/users/register").permitAll()
+                        .pathMatchers("/api/users/update-info").permitAll()
                         .anyExchange().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults())
