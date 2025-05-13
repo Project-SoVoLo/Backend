@@ -17,7 +17,8 @@ public class SecurityConfig {
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(ex -> ex
                         .pathMatchers("/api/users/register").permitAll()
-                        .pathMatchers("/api/users/update-info").permitAll()
+                        .pathMatchers("/api/users/update-info").permitAll()     // kakao login
+                        .pathMatchers("/api/chatbot/ask").permitAll()           // chatbot ask test
                         .anyExchange().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults())
