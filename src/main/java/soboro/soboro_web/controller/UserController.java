@@ -40,7 +40,7 @@ public class UserController {
                     user.setNickname(request.getNickname());
                     user.setUserBirth(request.getUserBirth());
                     user.setUserGender(request.getUserGender());
-                    user.setUserPhone(request.getUserPhone());
+                    user.setUserPhone(String.valueOf(request.getUserPhone()));
                     return userRepository.save(user);
                 })
                 .map(savedUser -> ResponseEntity.ok("추가 정보 저장 완료"))
