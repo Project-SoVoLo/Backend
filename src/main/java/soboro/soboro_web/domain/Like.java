@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
 @Setter
-@Document(collation = "like")
+@Document(collection = "like")
 public class Like {
     @Id
     private String likeId;  // 자동생성된 _id
