@@ -1,5 +1,7 @@
 package soboro.soboro_web.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -17,7 +19,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /*
-* 사용자의 채팅 입력을 Rasa로 보내는 API 컨트롤러
+* 모델 결과+채팅내용을  Rasa로 보내는 API 컨트롤러
+* - 입력 : 모델이 분류한 점수+텍스트
+* - 출력 : 클래스 분류 + 텍스트 원본 -> Rasa로 이 두 개의 값을 같이 보냄
 * */
 
 @RestController
@@ -26,20 +30,79 @@ public class RasaChatController {
     private final RestTemplate restTemplate = new RestTemplate();
     private final String rasaUrl = "http://localhost:5005/webhooks/rest/webhook";
 
-    @PostMapping
-    public ResponseEntity<String> chat(@RequestBody Map<String, String> body) {
-        String message = body.get("message");
+    // 사용자의 message, phq_score, google_emotion을 받아서
+    // 긍정/중립/부정 분기 후에 텍스트와 같이 rasa 서버로 전달
+    @PostMapping("/classification")
+    public ResponseEntity<Map<String, String>> classifyAndSentToRasa(@RequestBody Map<String, Object> body) {
 
-        Map<String, String> payload = new HashMap<>();
-        payload.put("sender", "user1");  // 유저 ID (고정 또는 세션에 따라 달리할 수 있음)
-        payload.put("message", message);
+        // 사용자로부터 입력받은 phq 점수
+        Integer phqScore = null;
+        Object rawScore = body.get("phq_score");
+        if (rawScore != null) {
+            try {
+                phqScore = Integer.parseInt(rawScore.toString());
+            } catch (NumberFormatException e) {
+                System.out.println("phq_score 값이 숫자가 아닙니다: " + rawScore);
+            }
+        }
+        // 사용자로부터 입력받은 google 분류
+        String message = (String) body.get("message");
+        String emotion = (String) body.get("google_emotion");
+        // 같이 전달받은 현재 사용자 아이디
+        String userId = (String) body.get("sender");
 
+        // 감정 분기 클래스 판단
+        String userClass = "unknown";
+        if (phqScore != null) { // phq 점수가 있을땐 -> 점수 범위에 따라서 판단
+            if (phqScore <= 4) userClass = "positive";
+            else if (phqScore <= 14) userClass = "neutral";
+            else if (phqScore <= 27) userClass = "negative";
+        } else if (emotion != null) {   // phq 점수 없고, google 있을땐 -> 해당 감정 클래스 그대로 사용
+            userClass = switch(emotion.toLowerCase()) {
+                case "positive", "neutral", "negative" -> emotion.toLowerCase();
+                default -> "unknown";
+            };
+        }
+
+        // rest api 전달을 위한 형태
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        HttpEntity<Map<String, String>> request = new HttpEntity<>(payload, headers);
-        ResponseEntity<String> response = restTemplate.postForEntity(rasaUrl, request, String.class);
+        // slot과 함께 rasa에 전달
+        String slotSetUrl = "http://localhost:5005/conversations/" + userId + "/tracker/events";
+        Map<String, Object> slotPayload = Map.of(
+                "event", "slot",
+                "name", "class",
+                "value", userClass
+        );
+        restTemplate.postForEntity(slotSetUrl, new HttpEntity<>(slotPayload, headers), String.class);
+        // 반영 대기
+        try { Thread.sleep(300); } catch (InterruptedException e) { e.printStackTrace(); }
 
-        return ResponseEntity.ok(response.getBody());
+        // 메세지 전송
+        Map<String, Object> msgPayload = Map.of(
+                "sender", userId,
+                "message", message
+        );
+
+        ResponseEntity<String> rasaResponse = restTemplate.postForEntity(
+                rasaUrl, new HttpEntity<>(msgPayload, headers), String.class
+        );
+
+        // 3. text 필드만 파싱해서 꺼내기
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(rasaResponse.getBody());
+
+            if (root.isArray() && root.size() > 0) {
+                String reply = root.get(0).get("text").asText();
+                return ResponseEntity.ok(Map.of("response", reply));
+            } else {
+                return ResponseEntity.ok(Map.of("response", "챗봇 응답이 없습니다."));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "응답 파싱 중 오류 발생", "detail", e.getMessage()));
+        }
     }
 }

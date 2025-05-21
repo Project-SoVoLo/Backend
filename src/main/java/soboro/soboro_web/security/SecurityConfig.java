@@ -19,6 +19,7 @@ public class SecurityConfig {
                         .pathMatchers("/api/users/register").permitAll()
                         .pathMatchers("/api/users/update-info").permitAll()     // kakao login
                         .pathMatchers("/api/chatbot/ask").permitAll()           // chatbot ask test
+                        .pathMatchers(("/api/rasa/classification")).permitAll() // rasa chatbot test
                         .anyExchange().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults())
