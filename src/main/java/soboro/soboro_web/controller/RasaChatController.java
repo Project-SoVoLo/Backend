@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import org.springframework.web.client.RestTemplate;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,17 +65,33 @@ public class RasaChatController {
             };
         }
 
+        // 디버깅용 로그 출력
+        System.out.println("📌 사용자 입력 로그");
+        System.out.println("💬 message: " + message);
+        System.out.println("📊 phq_score: " + phqScore);
+        System.out.println("🧠 google_emotion: " + emotion);
+        System.out.println("📦 분류된 class = " + userClass + " (타입: " + userClass.getClass().getSimpleName() + ")");
+
         // rest api 전달을 위한 형태
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+//        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setContentType(new MediaType("application", "json", StandardCharsets.UTF_8));
+
+
+        // slot 설정
+        String slotSetUrl = "http://localhost:5005/conversations/" + userId + "/tracker/events";
+
+        // 이전 세션의 slot이 남아있는 경우를 대비하여 초기화
+        Map<String, Object> resetPayload = Map.of(
+                "event", "reset_slots"
+        );
+        restTemplate.postForEntity(slotSetUrl, new HttpEntity<>(resetPayload, headers), String.class);
 
         // slot과 함께 rasa에 전달
-        String slotSetUrl = "http://localhost:5005/conversations/" + userId + "/tracker/events";
-        Map<String, Object> slotPayload = Map.of(
-                "event", "slot",
-                "name", "class",
-                "value", userClass
-        );
+        Map<String, Object> slotPayload = new HashMap<>();
+        slotPayload.put("event", "slot");
+        slotPayload.put("name", "class");
+        slotPayload.put("value", String.valueOf(userClass));
         restTemplate.postForEntity(slotSetUrl, new HttpEntity<>(slotPayload, headers), String.class);
         // 반영 대기
         try { Thread.sleep(300); } catch (InterruptedException e) { e.printStackTrace(); }
