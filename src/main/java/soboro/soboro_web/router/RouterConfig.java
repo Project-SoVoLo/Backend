@@ -14,7 +14,7 @@ public class RouterConfig {
     @Bean
     public RouterFunction<ServerResponse> route(UserHandler userHandler) {
         return RouterFunctions
-                .route(RequestPredicates.POST("/users/save"), userHandler::saveUser)
+                .route(RequestPredicates.POST("/users/register"), userHandler::saveUser)
                 .andRoute(RequestPredicates.GET("/users/{email}"), userHandler::getUserByEmail);
     }
 }
