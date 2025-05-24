@@ -30,13 +30,6 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
-
-
-    public UserController(UserService userService, UserRepository userRepository){
-        this.userService = userService;
-        this.userRepository = userRepository;
-    }
-
     // 이메일 회원가입 + JWT 자동 발급(자동 로그인)
     @PostMapping("/register")
     public Mono<ResponseEntity<Map<String, Object>>> register(@RequestBody User user) {
