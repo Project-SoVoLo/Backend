@@ -33,11 +33,12 @@ public class ReactiveSecurityConfig {
                 .authorizeExchange(ex -> ex
                         .pathMatchers(
                             "/api/users/login","/api/users/register",
-                               "/api/admins/register", "/api/admins/login").permitAll()
+                               "/api/admins/register", "/api/admins/login","/api/logout").permitAll()
                         .anyExchange().authenticated()
                 )
                 .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION) // JWT 토큰 검증 필터를 인증 필터 자리에 붙임
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .build();
+
     }
 }
