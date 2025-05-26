@@ -8,6 +8,10 @@ import reactor.core.publisher.Mono;
 import soboro.soboro_web.dto.DiagnosisRequestDto;
 import soboro.soboro_web.dto.DiagnosisResponseDto;
 import soboro.soboro_web.service.DiagnosisService;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import soboro.soboro_web.domain.enums.DiagnosisType;
 
 import java.security.Principal;
 
@@ -46,4 +50,14 @@ public class DiagnosisController {
                         record.getDiagnosisScore()
                 ));
     }
+
+    //자가진단 목록 조회
+    @GetMapping("/types")
+    public ResponseEntity<List<String>> getDiagnosisTypes() {
+        List<String> types = Arrays.stream(DiagnosisType.values())
+                .map(Enum::name)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(types);
+    }
+
 }
