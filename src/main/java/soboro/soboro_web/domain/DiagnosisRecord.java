@@ -19,6 +19,8 @@ import java.time.LocalDate;
 public class DiagnosisRecord {
     @Id
     private String diagnosisId;
+
+
     // 자가진단 속성 정의
     private LocalDate diagnosisDate;    // 자가진단 한 날짜
     private DiagnosisType diagnosisType;   // 자가진단 종류 (우울증, 불안, 조기정신증, 조울증, 스트레스, 불면, 알코올중독, 스마트기기사용장애)

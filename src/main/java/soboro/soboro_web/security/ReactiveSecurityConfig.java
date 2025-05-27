@@ -28,17 +28,24 @@ public class ReactiveSecurityConfig {
     @Bean
     public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
         return http
-                .csrf(csrf-> csrf.disable())
+                .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .authorizeExchange(ex -> ex
                         .pathMatchers(
-                            "/api/users/login","/api/users/register",
-                               "/api/admins/register", "/api/admins/login","/api/logout","/api/diagnosis/types").permitAll()
+
+                                "/api/users/login", "/api/users/register",
+                                "/api/admins/register", "/api/admins/login",
+                                "/api/users/update-info",
+                                "/api/chatbot/ask",
+                                "/api/rasa/classification",
+                                "/api/nlp/emotion_class","/api/logout","/api/diagnosis/types"
+                        ).permitAll()
                         .anyExchange().authenticated()
                 )
-                .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION) // JWT 토큰 검증 필터를 인증 필터 자리에 붙임
+                .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .build();
 
     }
+
 }

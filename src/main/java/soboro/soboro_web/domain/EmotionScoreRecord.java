@@ -14,6 +14,7 @@ import java.time.LocalDate;
 public class EmotionScoreRecord {
     @Id
     private String emotionId;
+    private String userId;
 
     private LocalDate emotionDate;  // 감정 점수가 기록된 날짜
     private int phqScore;           // phq-9 점수 기록
