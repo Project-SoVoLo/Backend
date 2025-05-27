@@ -12,7 +12,9 @@ import java.time.LocalDateTime;
 public class Comment {
     @Id
     private String commentId;
+
     private String userId;
+    private String postId;
     private String content;
     private LocalDateTime date = LocalDateTime.now();
 }
