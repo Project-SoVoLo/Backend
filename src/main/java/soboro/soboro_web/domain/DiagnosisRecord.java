@@ -14,6 +14,7 @@ import java.time.LocalDate;
 public class DiagnosisRecord {
     @Id
     private String diagnosisId;
+    private String userId;
 
     // 자가진단 속성 정의
     private LocalDate diagnosisDate;    // 자가진단 한 날짜

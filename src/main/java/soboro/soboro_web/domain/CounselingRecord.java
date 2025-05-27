@@ -14,6 +14,7 @@ import java.time.LocalDate;
 public class CounselingRecord {
     @Id
     private String counselingId;
+    private String userId;
 
     private LocalDate counselingDate;   // 상담 일시
     private String counselingSummary;     // 상담 내역 요약본 저장

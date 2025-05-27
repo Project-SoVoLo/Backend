@@ -14,9 +14,9 @@ import java.time.LocalDate;
 public class ChatSummary {
 
     @Id
-    private String id;
-
+    private String summaryId;
     private String userId; // 사용자와 연결
+
     private LocalDate date; // 대화가 끝난 날짜
     private String summary; // 대화 요약
     private String feedback; // 챗봇 피드백 요약
