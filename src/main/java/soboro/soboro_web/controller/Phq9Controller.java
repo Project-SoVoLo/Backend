@@ -26,6 +26,7 @@ public class Phq9Controller {
     @PostMapping("/predict")
     public Mono<Map> predictPhq(@RequestBody Map<String, String> request) {
         String text = request.get("text");
-        return flaskClient.requestPhqPrediction(text);
+        return flaskClient.requestPhqPrediction(text)
+                .map(flaskClient::wrapWithScore);
     }
 }
