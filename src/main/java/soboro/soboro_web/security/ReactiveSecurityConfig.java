@@ -37,7 +37,8 @@ public class ReactiveSecurityConfig {
                                 "/api/users/update-info",
                                 "/api/chatbot/ask",
                                 "/api/rasa/classification",
-                                "/api/nlp/emotion_class"
+                                "/api/nlp/emotion_class",
+                                "/api/phq9/predict"
                         ).permitAll()
                         .anyExchange().authenticated()
                 )
