@@ -1,14 +1,18 @@
 package soboro.soboro_web.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 import reactor.core.publisher.Mono;
 import soboro.soboro_web.service.FlaskClient;
 import soboro.soboro_web.service.GoogleNlpService;
+import soboro.soboro_web.service.RasaChatService;
 
 import java.util.Map;
 
@@ -23,6 +27,9 @@ import java.util.Map;
 public class ChatbotController {
     private final FlaskClient flaskClient;
     private final GoogleNlpService googleNlpService;
+    private final RasaChatService rasaChatService;
+
+    private static final Logger log = LoggerFactory.getLogger(ChatbotController.class);
 
     @PostMapping("/full")
     public Mono<ResponseEntity<Map<String, Object>>> analyzeAndSendToRasa(@RequestBody Map<String, String> request) {
@@ -34,10 +41,15 @@ public class ChatbotController {
                 .map(flaskClient::wrapWithScore)
                 .flatMap(phqResult -> {
                     int phqScore = (int) phqResult.get("phq9_total");
+                    // 확인용 phq 결과
+                    for (Map.Entry<String, Object> entry : phqResult.entrySet()) {
+                        log.info("PHQ 그룹: {} → 예측값: {}", entry.getKey(), entry.getValue());
+                    }
 
                     // 2. 사용자 입력 텍스트 -> Google NLP 감정 분석 -> output : 구글 점수로부터 분기한 positive/neutral/negative
                     Map<String, Object> sentimentResult = googleNlpService.analyzeSentiment(text);
                     String googleEmotion = (String) sentimentResult.get("sentiment");
+                    log.info("📌 감정 분석 결과 (Google NLP): {}", googleEmotion);     // 확인용 구글 결과
 
                     // 3. 원본 텍스트 + phq9 점수 + 구글 클래스 -> Rasa로 전송 -> 케이스에 따라서 응답 받기
                     Map<String, Object> combinedData = Map.of(
@@ -47,10 +59,19 @@ public class ChatbotController {
                             "google_emotion", googleEmotion
                     );
 
-                    // Spring에서 내부 호출처럼 RestTemplate을 직접 쓰지 않고 외부 전달할 경우엔 RasaChatController를 Service로 분리해도 좋음!
-                    return Mono.fromCallable(() ->
-                            ResponseEntity.ok(combinedData)  // 💡 여기서 바로 combinedData 반환 (디버깅 확인용)
-                    );
+//                    // 디버깅용 코드 - rasa 전달 x
+//                    return Mono.fromCallable(() ->
+//                            ResponseEntity.ok(combinedData)
+//                    );
+
+                    // 4. Rasa 서버에 전달하기
+                    return Mono.fromCallable(() -> {
+                        String rasaUrl = "http://localhost:8080/api/rasa/classification";
+                        RestTemplate restTemplate = new RestTemplate();
+                        ResponseEntity<Map> response = restTemplate.postForEntity(rasaUrl, combinedData, Map.class);  // 👈 이거!
+                        return ResponseEntity.ok(response.getBody());
+                    });
+
                 });
     }
 }
