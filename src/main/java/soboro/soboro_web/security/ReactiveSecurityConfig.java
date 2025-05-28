@@ -35,10 +35,11 @@ public class ReactiveSecurityConfig {
                                 "/api/users/login", "/api/users/register",
                                 "/api/admins/register", "/api/admins/login",
                                 "/api/users/update-info",
-                                "/api/chatbot/ask",
+                                "/api/chatgpt/ask",
                                 "/api/rasa/classification",
                                 "/api/nlp/emotion_class",
-                                "/api/phq9/predict"
+                                "/api/phq9/predict",
+                                "/api/chatbot/full"
                         ).permitAll()
                         .anyExchange().authenticated()
                 )
