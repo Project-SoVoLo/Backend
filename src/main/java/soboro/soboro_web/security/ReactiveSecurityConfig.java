@@ -35,9 +35,10 @@ public class ReactiveSecurityConfig {
 
                                 "/api/users/login", "/api/users/register",
                                 "/api/admins/register", "/api/admins/login",
-                                "/api/users/update-info",
+                                "/api/users/update-info","/api/logout",
+                                "/api/nlp/emotion_class","/api/diagnosis/types","/api/phq9/predict",
                                 "/api/chatbot/ask",
-                                "/api/rasa/classification","/api/nlp/emotion_class","/api/logout","/api/diagnosis/types","/api/phq9/predict"
+                                "/api/rasa/classification","/api/chatbot/full"
 
                         ).permitAll()
                         .anyExchange().authenticated()
