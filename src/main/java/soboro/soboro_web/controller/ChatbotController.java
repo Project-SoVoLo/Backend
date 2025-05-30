@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import reactor.core.publisher.Mono;
 import soboro.soboro_web.domain.EmotionScoreRecord;
@@ -18,6 +15,7 @@ import soboro.soboro_web.service.GoogleNlpService;
 import soboro.soboro_web.service.RasaChatService;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 /**********************************************************************************
@@ -77,7 +75,7 @@ public class ChatbotController {
 
                         // DB에 phq_score, google_emotion 저장하기 (EmotionScoreRecord)
                         EmotionScoreRecord  record = new EmotionScoreRecord();
-                        record.setUserId(sender);
+                        record.setUserEmail(sender);
                         record.setEmotionDate(LocalDate.now());
                         record.setPhqScore(phqScore);
                         record.setGoogleEmotion(googleEmotion);
@@ -94,4 +92,6 @@ public class ChatbotController {
 
                 });
     }
+
+
 }
