@@ -18,7 +18,7 @@ public class EmotionScoreRecord {
 
     private LocalDate emotionDate;  // 감정 점수가 기록된 날짜
     private int phqScore;           // phq-9 점수 기록
-    private float googleScore;      // google NLP 점수 기록
+    private String googleEmotion;      // google NLP 클래스 기록 (긍.중.부)
     private EmotionTypes emotionType;        // 긍정,중립,부정 상태 기록
 
     public EmotionScoreRecord() {
