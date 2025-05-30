@@ -32,6 +32,13 @@ public class ReactiveSecurityConfig {
                 .formLogin(form -> form.disable())
                 .authorizeExchange(ex -> ex
                         .pathMatchers(
+                            "/swagger-ui.html",
+                            "/swagger-ui/**",
+                            "/v3/api-docs/**",
+                            "/webjars/**"
+                        ).permitAll()
+
+                        .pathMatchers(
                                 "/api/users/login", "/api/users/register",
                                 "/api/admins/register", "/api/admins/login",
                                 "/api/users/update-info",
