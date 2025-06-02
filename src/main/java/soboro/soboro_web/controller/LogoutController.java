@@ -15,3 +15,4 @@ public class LogoutController {
         return Mono.just(ResponseEntity.ok("로그아웃 되었습니다"));
     }
 }
+

@@ -8,3 +8,4 @@ public interface DiagnosisRecordRepository extends ReactiveMongoRepository<Diagn
     // 특정 사용자(userId)의 자가진단 결과 전체 조회
     Flux<DiagnosisRecord> findAllByUserId(String userId);
 }
+

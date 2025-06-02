@@ -16,3 +16,4 @@ public class DiagnosisResponseDto {
     private DiagnosisType diagnosisType;
     private int diagnosisScore;
 }
+

@@ -19,3 +19,4 @@ public class Comment {
     private LocalDateTime date = LocalDateTime.now();
     private String nickname;
 }
+
