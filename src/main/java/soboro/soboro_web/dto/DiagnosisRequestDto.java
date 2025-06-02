@@ -13,3 +13,4 @@ public class DiagnosisRequestDto {
     private DiagnosisType type;
     private List<Integer> answers;      //질문 9개에 대한 점수
 }
+

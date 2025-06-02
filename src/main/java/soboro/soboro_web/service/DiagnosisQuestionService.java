@@ -16,3 +16,4 @@ public class DiagnosisQuestionService {
         return repository.findAllByTypeOrderByNumber(type);
     }
 }
+

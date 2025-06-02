@@ -8,3 +8,4 @@ import soboro.soboro_web.domain.enums.DiagnosisType;
 public interface DiagnosisQuestionRepository extends ReactiveMongoRepository<DiagnosisQuestion, String> {
     Flux<DiagnosisQuestion> findAllByTypeOrderByNumber(DiagnosisType type);
 }
+
