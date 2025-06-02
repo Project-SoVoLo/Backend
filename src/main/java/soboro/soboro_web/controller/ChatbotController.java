@@ -10,10 +10,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 import reactor.core.publisher.Mono;
+import soboro.soboro_web.domain.EmotionScoreRecord;
+import soboro.soboro_web.domain.enums.EmotionTypes;
+import soboro.soboro_web.repository.EmotionScoreRecordRepository;
 import soboro.soboro_web.service.FlaskClient;
 import soboro.soboro_web.service.GoogleNlpService;
 import soboro.soboro_web.service.RasaChatService;
 
+import java.time.LocalDate;
 import java.util.Map;
 
 /**********************************************************************************
@@ -28,6 +32,7 @@ public class ChatbotController {
     private final FlaskClient flaskClient;
     private final GoogleNlpService googleNlpService;
     private final RasaChatService rasaChatService;
+    private final EmotionScoreRecordRepository emotionScoreRecordRepository;
 
     private static final Logger log = LoggerFactory.getLogger(ChatbotController.class);
 
@@ -68,7 +73,22 @@ public class ChatbotController {
                     return Mono.fromCallable(() -> {
                         String rasaUrl = "http://localhost:8080/api/rasa/classification";
                         RestTemplate restTemplate = new RestTemplate();
-                        ResponseEntity<Map> response = restTemplate.postForEntity(rasaUrl, combinedData, Map.class);  // 👈 이거!
+                        ResponseEntity<Map> response = restTemplate.postForEntity(rasaUrl, combinedData, Map.class);
+
+                        // DB에 phq_score, google_emotion 저장하기 (EmotionScoreRecord)
+                        EmotionScoreRecord  record = new EmotionScoreRecord();
+                        record.setUserId(sender);
+                        record.setEmotionDate(LocalDate.now());
+                        record.setPhqScore(phqScore);
+                        record.setGoogleEmotion(googleEmotion);
+                        try {
+                            EmotionTypes emotionTypes = EmotionTypes.valueOf(googleEmotion.toUpperCase());
+                            record.setEmotionType(emotionTypes);
+                        } catch (IllegalArgumentException e) {
+                            log.warn("Emotion Type 매핑 실패: {}", googleEmotion);
+                        }
+                        emotionScoreRecordRepository.save(record).subscribe();
+
                         return ResponseEntity.ok(response.getBody());
                     });
 

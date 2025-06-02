@@ -33,6 +33,11 @@ public class ReactiveSecurityConfig {
                 .authorizeExchange(ex -> ex
                         .pathMatchers(
 
+                            "/swagger-ui.html",
+                            "/swagger-ui/**",
+                            "/v3/api-docs/**",
+                            "/webjars/**",
+
                                 "/api/users/login", "/api/users/register",
                                 "/api/admins/register", "/api/admins/login",
                                 "/api/users/update-info","/api/logout",
