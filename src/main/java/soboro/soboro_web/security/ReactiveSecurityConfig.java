@@ -32,27 +32,26 @@ public class ReactiveSecurityConfig {
                 .formLogin(form -> form.disable())
                 .authorizeExchange(ex -> ex
                         .pathMatchers(
+
                             "/swagger-ui.html",
                             "/swagger-ui/**",
                             "/v3/api-docs/**",
-                            "/webjars/**"
-                        ).permitAll()
+                            "/webjars/**",
 
-                        .pathMatchers(
                                 "/api/users/login", "/api/users/register",
                                 "/api/admins/register", "/api/admins/login",
                                 "/api/users/update-info",
-                                "/api/chatgpt/ask",
-                                "/api/rasa/classification",
-                                "/api/nlp/emotion_class",
-                                "/api/phq9/predict",
-                                "/api/chatbot/full"
+                                "/api/nlp/emotion_class","/api/diagnosis/types","/api/phq9/predict",
+                                "/api/chatbot/ask",
+                                "/api/rasa/classification","/api/chatbot/full"
+
                         ).permitAll()
                         .anyExchange().authenticated()
                 )
                 .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .build();
+
     }
 
 }
