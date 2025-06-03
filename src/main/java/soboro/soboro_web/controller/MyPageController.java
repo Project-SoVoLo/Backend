@@ -23,14 +23,19 @@ public class MyPageController {
     // 챗봇 상담 내역 요약 저장
     @PostMapping("/chat-summaries")
     public Mono<ResponseEntity<Void>> saveChatSummary(@RequestBody ChatSummaryRequest request){
+
         return ReactiveSecurityContextHolder.getContext()
                 .map(ctx -> ctx.getAuthentication().getName())
-                .flatMap(userEmail ->
-                        chatSummaryService.summarizeAndSave(
-                                userEmail,
-                                request.getChatLog()
-                        ).thenReturn(ResponseEntity.ok().build())
-                );
+                .flatMap(userEmail -> {
+                    // 디버깅용 로그
+                    System.out.println("✅ [컨트롤러] 요청 들어옴");
+                    System.out.println("🔐 사용자 이메일: " + userEmail);
+
+                    return chatSummaryService.summarizeAndSave(
+                            userEmail,
+                            request.getChatLog()
+                    ).thenReturn(ResponseEntity.ok().build());
+                });
     }
 
     // 챗봇 상담 내역 요약 조회 + 점수까지 같이 조회
