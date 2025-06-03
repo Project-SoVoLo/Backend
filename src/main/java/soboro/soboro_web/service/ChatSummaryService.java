@@ -22,8 +22,8 @@ public class ChatSummaryService {
     private final EmotionScoreRecordRepository emotionScoreRecordRepository;
     private final GeminiApiClient apiClient;
 
-    // 상담 요약 및 저장
-    public Mono<Void> summarizeAndSave(String userEmail, String chatLog, EmotionTypes emotionType) {
+    // 상담 요약 및 저장 -> 저장되는 테이블을 emotion 으로 통합, 클래스는 gemini로 판단 x
+    public Mono<Void> summarizeAndSave(String userEmail, String chatLog) {
         return apiClient.summarizeChatLog(chatLog)
                 .flatMap(response -> {
                     String summaryText = response.get("summary");
@@ -32,20 +32,21 @@ public class ChatSummaryService {
                     String summary = parts.length > 1 ? parts[1].trim() : "";
                     String feedback = parts.length > 2 ? parts[2].trim() : "";
 
-                    ChatSummary chatSummary = new ChatSummary();
-                    chatSummary.setUserEmail(userEmail);
-                    chatSummary.setDate(LocalDate.now(ZoneId.of("Asia/Seoul")));
-                    chatSummary.setSummary(summary);
-                    chatSummary.setFeedback(feedback);
-                    chatSummary.setEmotionType(emotionType); // 외부에서 받은 감정 상태 직접 설정
+                    // emotion 테이블에 저장되도록 수정
+                    LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));       // emotion에 저장되어있던 감정 점수 분석 결과를 조회함 -> 그 튜플에다가 요약본을 넣어야 하니까
+                    return emotionScoreRecordRepository.findByUserEmailOrderByEmotionDateDesc(userEmail, today)
+                            .flatMap(record -> {
+                                record.setSummary(summary);     // gemini가 준 상담내용 요약본
+                                record.setFeedback(feedback);   // gemini가 준 피드백 요약본
+                                return emotionScoreRecordRepository.save(record);
+                            });
 
-                    return chatSummaryRepository.save(chatSummary).then();
-                });
+                }).then();
     }
 
     // 상담 요약 내용 조회
-    public Flux<ChatSummary> getSummaries(String userEmail){
-        return chatSummaryRepository.findByUserEmailOrderByDateDesc(userEmail);
+    public Flux<EmotionScoreRecord> getEmotionRecords(String userEmail) {
+        return emotionScoreRecordRepository.findByUserEmailOrderByEmotionDateDesc(userEmail);
     }
 
     public Mono<EmotionScoreRecord> getEmotionScore(String userEmail, LocalDate date) {

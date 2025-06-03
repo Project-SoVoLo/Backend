@@ -28,8 +28,7 @@ public class MyPageController {
                 .flatMap(userEmail ->
                         chatSummaryService.summarizeAndSave(
                                 userEmail,
-                                request.getChatLog(),
-                                request.getEmotionType() // 감정 상태 전달
+                                request.getChatLog()
                         ).thenReturn(ResponseEntity.ok().build())
                 );
     }
@@ -43,20 +42,18 @@ public class MyPageController {
                     System.out.println("현재 사용자 이메일: "+ email);
                     return email;
                 })
-//                .map(ctx -> ctx.getAuthentication().getName()) // 인증된 사용자의 userId(Email)를 기준으로 반환
                 .flatMapMany(userEmail ->
-                        chatSummaryService.getSummaries(userEmail)
+                        chatSummaryService.getEmotionRecords(userEmail)
                                 .flatMap(chatSummary ->
-                                        chatSummaryService.getEmotionScore(userEmail, chatSummary.getDate())
-                                                .defaultIfEmpty(new EmotionScoreRecord())   // phq랑 google 이 다른 테이블에 있으니까, 일단 이게 없어도 출력하도록 함
-                                                .map(emotionScore -> new ChatSummaryResponse(
-                                                        chatSummary.getDate(),
-                                                        chatSummary.getSummary(),
-                                                        chatSummary.getFeedback(),
-                                                        chatSummary.getEmotionType().getKorean(),
-                                                        chatSummary.getEmotionType().getColorCode(),
-                                                        emotionScore.getPhqScore(),
-                                                        emotionScore.getGoogleEmotion()
+                                        chatSummaryService.getEmotionRecords(userEmail)
+                                                .map(record -> new ChatSummaryResponse(
+                                                        record.getEmotionDate(),
+                                                        record.getSummary(),
+                                                        record.getFeedback(),
+                                                        record.getEmotionType().getKorean(),
+                                                        record.getEmotionType().getColorCode(),
+                                                        record.getPhqScore(),
+                                                        record.getGoogleEmotion()
                                                 ))));
     }
 
