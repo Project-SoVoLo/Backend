@@ -47,7 +47,7 @@ public class JwtAuthenticationFilter implements WebFilter {
                         List<GrantedAuthority> authorityList =
                                 List.of(new SimpleGrantedAuthority("ROLE_" + role)); // 권한 부여
                         Authentication auth = new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities());
+                                userDetails.getUsername(), null, userDetails.getAuthorities());
 
                         // 인증 정보를 SecurityContext에 담고 다음 필터로
                         return chain.filter(exchange)
