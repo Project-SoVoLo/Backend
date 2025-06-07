@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 import reactor.core.publisher.Mono;
 import soboro.soboro_web.domain.User;
+import soboro.soboro_web.jwt.JwtUtil;
 import soboro.soboro_web.repository.UserRepository;
 
 import java.util.HashMap;
@@ -23,6 +24,7 @@ public class KaKaoAuthController {
 
     private final WebClient webClient = WebClient.create();
     private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
 
     @Value("${kakao.client-id}")
     private String clientId;
@@ -69,14 +71,19 @@ public class KaKaoAuthController {
                                 String nickname = (String) profile.get("nickname");
 
                                 return userRepository.findByUserEmail(email)
-                                        .switchIfEmpty(
-                                                userRepository.save(new User(email, nickname))
-                                        )
+                                        .switchIfEmpty(userRepository.save(new User(email, nickname)))
                                         .flatMap(user -> {
+                                            // ✅ JWT 발급 추가
+                                            String jwt = jwtUtil.generateToken(email, "USER");
+                                            long expiresAt = System.currentTimeMillis() + jwtUtil.getExpiration();
+
                                             Map<String, Object> result = new HashMap<>();
                                             result.put("message", "카카오 로그인 성공");
                                             result.put("userEmail", email);
-                                            result.put("nextStep", "/signup-extra-info");
+                                            result.put("token", jwt);                      // ✅ 프론트에서 필요한 값!
+                                            result.put("expiresAt", expiresAt);            // ✅ 선택
+                                            result.put("role", "USER");                    // ✅ 선택
+                                            result.put("nextStep", "/login-extra-info");
 
                                             return Mono.just(ResponseEntity.ok(result));
                                         });
