@@ -36,31 +36,32 @@ public class ReactiveSecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))  // ✅ 변경된 CORS 설정
                 .authorizeExchange(ex -> ex
                         .pathMatchers(
+
                             "/swagger-ui.html",
                             "/swagger-ui/**",
                             "/v3/api-docs/**",
-                            "/webjars/**"
-                        ).permitAll()
+                            "/webjars/**",
 
                         .pathMatchers(
                                 "/", "/index.html",
                                 "/static/**", "/css/**", "/js/**",
                                 "/api/oauth/**",
                                 "/favicon.ico", "/manifest.json", "/logo192.png",
+                          
                                 "/api/users/login", "/api/users/register",
                                 "/api/admins/register", "/api/admins/login",
                                 "/api/users/update-info",
-                                "/api/chatgpt/ask",
-                                "/api/rasa/classification",
-                                "/api/nlp/emotion_class",
-                                "/api/phq9/predict",
-                                "/api/chatbot/full"
+                                "/api/nlp/emotion_class","/api/diagnosis/types","/api/phq9/predict",
+                                "/api/chatbot/ask",
+                                "/api/rasa/classification","/api/chatbot/full"
+
                         ).permitAll()
                         .anyExchange().authenticated()
                 )
                 .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .build();
+
     }
 
     @Bean
@@ -78,3 +79,4 @@ public class ReactiveSecurityConfig {
 
 
 }
+

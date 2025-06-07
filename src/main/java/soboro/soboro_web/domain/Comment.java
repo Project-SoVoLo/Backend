@@ -17,4 +17,6 @@ public class Comment {
     private String postId;
     private String content;
     private LocalDateTime date = LocalDateTime.now();
+    private String nickname;
 }
+
