@@ -41,19 +41,18 @@ public class ReactiveSecurityConfig {
                             "/swagger-ui/**",
                             "/v3/api-docs/**",
                             "/webjars/**",
-
-                        .pathMatchers(
-                                "/", "/index.html",
-                                "/static/**", "/css/**", "/js/**",
-                                "/api/oauth/**",
-                                "/favicon.ico", "/manifest.json", "/logo192.png",
+                            
+                            "/", "/index.html",
+                            "/static/**", "/css/**", "/js/**",
+                            "/api/oauth/**",
+                            "/favicon.ico", "/manifest.json", "/logo192.png",
                           
-                                "/api/users/login", "/api/users/register",
-                                "/api/admins/register", "/api/admins/login",
-                                "/api/users/update-info",
-                                "/api/nlp/emotion_class","/api/diagnosis/types","/api/phq9/predict",
-                                "/api/chatbot/ask",
-                                "/api/rasa/classification","/api/chatbot/full"
+                            "/api/users/login", "/api/users/register",
+                            "/api/admins/register", "/api/admins/login",
+                            "/api/users/update-info",
+                            "/api/nlp/emotion_class","/api/diagnosis/types","/api/phq9/predict",
+                            "/api/chatbot/ask",
+                            "/api/rasa/classification","/api/chatbot/full"
 
                         ).permitAll()
                         .anyExchange().authenticated()
