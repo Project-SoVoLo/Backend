@@ -21,7 +21,8 @@ public class CustomUserDetailsService implements ReactiveUserDetailsService {
         return userRepository.findByUserEmail(email)
             .map(user -> User.builder()
                 .username(user.getUserEmail())
-                .password(user.getPassword())
+                    // 카카오 로그인 유저는 password가 없으니까 빈 문자열으로 채워넣기
+                    .password(user.getPassword() != null ? user.getPassword() : "")
                 .roles("USER")
                 .build()
             );
