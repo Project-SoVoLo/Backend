@@ -10,7 +10,7 @@ public class UserExtraInfoRequest {
     private String userEmail;
     private String userName;
     private String nickname;
-    private int userBirth;
+    private String userBirth;
     private String userGender;
-    private int userPhone;
+    private String userPhone;
 }

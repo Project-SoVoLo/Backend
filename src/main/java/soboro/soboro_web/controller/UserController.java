@@ -88,11 +88,11 @@ public class UserController {
     public Mono<ResponseEntity<String>> updateUserExtraInfo(@RequestBody UserExtraInfoRequest request) {
         return userRepository.findByUserEmail(request.getUserEmail())
                 .flatMap(user -> {
-                    user.setUserName(request.getUserName());
-                    user.setNickname(request.getNickname());
-                    user.setUserBirth(request.getUserBirth());
-                    user.setUserGender(request.getUserGender());
-                    user.setUserPhone(String.valueOf(request.getUserPhone()));
+                    if (request.getUserName() != null) user.setUserName(request.getUserName());
+                    if (request.getNickname() != null) user.setNickname(request.getNickname());
+                    if (request.getUserBirth() != null) user.setUserBirth(request.getUserBirth());
+                    if (request.getUserGender() != null) user.setUserGender(request.getUserGender());
+                    if (request.getUserPhone() != null) user.setUserPhone(request.getUserPhone());
                     return userRepository.save(user);
                 })
                 .map(savedUser -> ResponseEntity.ok("추가 정보 저장 완료"))
