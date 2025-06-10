@@ -34,6 +34,28 @@ public class ChatbotController {
 
     private static final Logger log = LoggerFactory.getLogger(ChatbotController.class);
 
+
+    // 대화 시작용 엔드포인트 메소드
+    @PostMapping("/start-chat")
+    public ResponseEntity<Map<String, Object>> startChat(@RequestBody Map<String, String> request) {
+        String sender = request.get("sender");
+        String message = request.getOrDefault("message", "안녕"); // 기본 메시지 설정
+
+        Map<String, Object> rasaRequest = Map.of(
+                "sender", sender,
+                "message", message
+        );
+
+        RestTemplate restTemplate = new RestTemplate();
+        String rasaUrl = "http://localhost:5005/webhooks/rest/webhook"; // Rasa 기본 REST endpoint
+
+        ResponseEntity<List> response = restTemplate.postForEntity(rasaUrl, rasaRequest, List.class);
+        Map<String, Object> result = Map.of("response", response.getBody());
+        return ResponseEntity.ok(result);
+    }
+
+
+    // 사용자가 오늘 하루 처음 말한 감정 얘기는 감정 분석하여 저장
     @PostMapping("/full")
     public Mono<ResponseEntity<Map<String, Object>>> analyzeAndSendToRasa(@RequestBody Map<String, String> request) {
         String text = request.get("text");
@@ -92,6 +114,37 @@ public class ChatbotController {
 
                 });
     }
+
+
+    // 대화 연장 이후 나누는 얘기들은 이전에 기록된 감정 클래스를 참고하여
+    // rasa에서 intent 별로 응답만 받도록 함, 별도 감정 분석 x
+    @PostMapping("/continue")
+    public Mono<ResponseEntity<Map<String, Object>>> continueChat(@RequestBody Map<String, String> request) {
+        String text = request.get("text");
+        String sender = request.get("sender");
+
+        return emotionScoreRecordRepository
+                .findByUserEmailOrderByEmotionDateDesc(sender)
+                .next() // Flux → Mono로 바꾸고 최신 기록 1개 가져옴
+                .defaultIfEmpty(new EmotionScoreRecord()) // 없을 경우 기본값
+                .map(record -> {
+                    String emotionClass = record.getEmotionType() != null
+                            ? record.getEmotionType().name().toLowerCase()
+                            : "neutral";
+
+                    Map<String, Object> rasaRequest = Map.of(
+                            "message", text,
+                            "sender", sender,
+                            "class", emotionClass
+                    );
+
+                    RestTemplate restTemplate = new RestTemplate();
+                    String rasaUrl = "http://localhost:5005/webhooks/rest/webhook";
+                    ResponseEntity<List> response = restTemplate.postForEntity(rasaUrl, rasaRequest, List.class);
+                    return ResponseEntity.ok(Map.of("response", response.getBody()));
+                });
+    }
+
 
 
 }
