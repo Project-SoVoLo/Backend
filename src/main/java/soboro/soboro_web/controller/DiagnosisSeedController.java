@@ -154,7 +154,6 @@ public class DiagnosisSeedController {
 
             operations.add(op);
         }
-
         return Flux.merge(operations)
                 .collectList()
                 .map(results -> String.join("\n", results));
