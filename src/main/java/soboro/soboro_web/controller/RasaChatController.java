@@ -19,6 +19,7 @@ import soboro.soboro_web.service.RasaChatService;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 // 기존 로직을 service로 옮김 (통합 컨트롤러를 위해서)
@@ -29,14 +30,16 @@ public class RasaChatController {
     private final RasaChatService rasaChatService;
 
     @PostMapping("/classification")
-    public ResponseEntity<Map<String, String>> classifyAndSend(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<Map<String, Object>> classifyAndSend(@RequestBody Map<String, Object> body) {
         String message = (String) body.get("message");
         String sender = (String) body.get("sender");
         Integer phqScore = body.get("phq_score") != null ? Integer.parseInt(body.get("phq_score").toString()) : null;
         String emotion = (String) body.get("google_emotion");
 
-        String reply = rasaChatService.classifyAndSendToRasa(message, sender, phqScore, emotion);
+        // 여기서도 응답 타입 바꿔서 피드백+ask continue 같이 묶어서 리스트로 주도록 함
+        List<Map<String, Object>> reply = rasaChatService.classifyAndSendToRasa(message, sender, phqScore, emotion);
         return ResponseEntity.ok(Map.of("response", reply));
+//        String reply = rasaChatService.classifyAndSendToRasa(message, sender, phqScore, emotion);
     }
 }
 
