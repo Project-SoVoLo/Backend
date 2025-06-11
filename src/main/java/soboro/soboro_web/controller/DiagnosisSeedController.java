@@ -159,4 +159,5 @@ public class DiagnosisSeedController {
                 .collectList()
                 .map(results -> String.join("\n", results));
     }
+
 }
