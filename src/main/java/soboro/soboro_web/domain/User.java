@@ -19,7 +19,7 @@ public class User {
 
     private String userName;
     private String nickname;
-    private int userBirth;
+    private String userBirth;
     private String userGender;
     private String userPhone;      // 11자리 숫자이므로 string 사용으로 변경
 

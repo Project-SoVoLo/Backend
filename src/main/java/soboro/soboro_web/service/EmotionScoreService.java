@@ -11,7 +11,7 @@ import soboro.soboro_web.repository.EmotionScoreRepository;
 public class EmotionScoreService {
     private final EmotionScoreRepository repository;
 
-    public Flux<EmotionScoreRecord> getUserScores(String userId) {
-        return repository.findAllByUserIdOrderByEmotionDate(userId);
+    public Flux<EmotionScoreRecord> getUserScores(String userEmail) {
+        return repository.findAllByUserEmailOrderByEmotionDate(userEmail);
     }
 }
