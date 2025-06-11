@@ -19,7 +19,7 @@ public class EmotionScoreController {
 
     @GetMapping("/scores")
     public Flux<EmotionScoreRecord> getMyScores(Principal principal) {
-        String userId = principal.getName();
-        return emotionScoreService.getUserScores(userId);
+        String userEmail = principal.getName();
+        return emotionScoreService.getUserScores(userEmail);
     }
 }

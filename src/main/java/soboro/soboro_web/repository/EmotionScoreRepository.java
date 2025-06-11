@@ -6,4 +6,5 @@ import soboro.soboro_web.domain.EmotionScoreRecord;
 
 public interface EmotionScoreRepository extends ReactiveMongoRepository<EmotionScoreRecord, String> {
     Flux<EmotionScoreRecord> findAllByUserEmailOrderByEmotionDate(String userEmail);
+//Flux<EmotionScoreRecord> findAllByUserIdOrderByEmotionDate(String userId);
 }
