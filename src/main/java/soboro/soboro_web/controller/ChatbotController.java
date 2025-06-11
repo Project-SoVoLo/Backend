@@ -95,6 +95,22 @@ public class ChatbotController {
                         RestTemplate restTemplate = new RestTemplate();
                         ResponseEntity<Map> response = restTemplate.postForEntity(rasaUrl, combinedData, Map.class);
 
+                        // 타입캐스팅
+                        Object raw = response.getBody().get("response");
+
+                        List<Map<String, Object>> rasaResponses;
+
+                        if (raw instanceof List) {
+                            rasaResponses = (List<Map<String, Object>>) raw;
+                        } else if (raw instanceof String) {
+                            rasaResponses = List.of(Map.of("text", raw));
+                        } else {
+                            throw new RuntimeException("예상치 못한 Rasa 응답 형식");
+                        }
+
+                        System.out.println("✅ Rasa 응답 확인: " + response.getBody());
+
+
                         // DB에 phq_score, google_emotion 저장하기 (EmotionScoreRecord)
                         EmotionScoreRecord  record = new EmotionScoreRecord();
                         record.setUserEmail(sender);
@@ -109,7 +125,7 @@ public class ChatbotController {
                         }
                         emotionScoreRecordRepository.save(record).subscribe();
 
-                        return ResponseEntity.ok(response.getBody());
+                      return ResponseEntity.ok(Map.of("response", rasaResponses));
                     });
 
                 });

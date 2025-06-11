@@ -8,6 +8,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /*****************************************************************************
@@ -23,7 +24,7 @@ public class RasaChatService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final String rasaUrl = "http://localhost:5005/webhooks/rest/webhook";
 
-    public String classifyAndSendToRasa(String message, String sender, Integer phqScore, String emotion) {
+    public List<Map<String, Object>> classifyAndSendToRasa(String message, String sender, Integer phqScore, String emotion) {
         // 클래스 분류
         String userClass = "unknown";
         if (phqScore != null) {
@@ -73,12 +74,15 @@ public class RasaChatService {
             JsonNode root = mapper.readTree(rasaResponse.getBody());
 
             if (root.isArray() && root.size() > 0) {
-                return root.get(0).get("text").asText();
+                // list 변환
+                List<Map<String, Object>> result = mapper.convertValue(root, List.class);
+                return result;
+//                return root.get(0).get("text").asText();
             } else {
-                return "챗봇 응답이 없습니다.";
+                return List.of(Map.of("text", "챗봇 응답이 없습니다."));
             }
         } catch (Exception e) {
-            return "❌ 응답 파싱 오류: " + e.getMessage();
+            return List.of(Map.of("text", "❌ 응답 파싱 오류: " + e.getMessage()));
         }
     }
 }
