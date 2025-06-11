@@ -25,7 +25,7 @@ public class ReactiveSecurityConfig {
     // 회원가입, 로그인 시 비밀번호 암호화
     @Bean
     public PasswordEncoder PasswordEncoder(){
-         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
     // 인증 필요한 요청 설정, JWT 필터 연결
     @Bean
@@ -37,22 +37,22 @@ public class ReactiveSecurityConfig {
                 .authorizeExchange(ex -> ex
                         .pathMatchers(
 
-                            "/swagger-ui.html",
-                            "/swagger-ui/**",
-                            "/v3/api-docs/**",
-                            "/webjars/**",
-                            
-                            "/", "/index.html",
-                            "/static/**", "/css/**", "/js/**",
-                            "/api/oauth/**",
-                            "/favicon.ico", "/manifest.json", "/logo192.png",
-                          
-                            "/api/users/login", "/api/users/register",
-                            "/api/admins/register", "/api/admins/login",
-                            "/api/users/update-info",
-                            "/api/nlp/emotion_class","/api/diagnosis/types","/api/phq9/predict",
-                            "/api/chatbot/ask",
-                            "/api/rasa/classification","/api/chatbot/full"
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/webjars/**",
+
+                                "/", "/index.html",
+                                "/static/**", "/css/**", "/js/**",
+                                "/api/oauth/**",
+                                "/favicon.ico", "/manifest.json", "/logo192.png",
+
+                                "/api/users/login", "/api/users/register",
+                                "/api/admins/register", "/api/admins/login",
+                                "/api/users/update-info",
+                                "/api/nlp/emotion_class","/api/diagnosis/types","/api/phq9/predict",
+                                "/api/chatbot/ask",
+                                "/api/rasa/classification","/api/chatbot/full"
 
                         ).permitAll()
                         .anyExchange().authenticated()
@@ -78,4 +78,3 @@ public class ReactiveSecurityConfig {
 
 
 }
-

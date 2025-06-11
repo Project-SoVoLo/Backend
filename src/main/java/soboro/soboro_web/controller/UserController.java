@@ -33,27 +33,27 @@ public class UserController {
     @PostMapping("/register")
     public Mono<ResponseEntity<Map<String, Object>>> register(@RequestBody User user) {
         return userService.register(user)
-            .map(savedUser -> {
-                String token = jwtUtil.generateToken(savedUser.getUserEmail(), "USER");
-                long expiresAt = System.currentTimeMillis() + jwtUtil.getExpiration();
+                .map(savedUser -> {
+                    String token = jwtUtil.generateToken(savedUser.getUserEmail(), "USER");
+                    long expiresAt = System.currentTimeMillis() + jwtUtil.getExpiration();
 
-                Map<String, Object> res = new HashMap<>();
-                res.put("message", "사용자 회원가입 성공");
-                res.put("userEmail", savedUser.getUserEmail());
-                res.put("token", token);
-                res.put("expiresAt", expiresAt);
-                res.put("role", "USER");
-                res.put("nextStep", "/home");
+                    Map<String, Object> res = new HashMap<>();
+                    res.put("message", "사용자 회원가입 성공");
+                    res.put("userEmail", savedUser.getUserEmail());
+                    res.put("token", token);
+                    res.put("expiresAt", expiresAt);
+                    res.put("role", "USER");
+                    res.put("nextStep", "/home");
 
-                return ResponseEntity.ok(res);
-            })
-            .onErrorResume(error -> {
-                // 예외 발생 시 400 에러 + 메시지 JSON 형태로 응답
-                Map<String, Object> res = new HashMap<>();
-                res.put("error", error.getMessage());
-                res.put("nextStep", "/register");
-                return Mono.just(ResponseEntity.badRequest().body(res));
-            });
+                    return ResponseEntity.ok(res);
+                })
+                .onErrorResume(error -> {
+                    // 예외 발생 시 400 에러 + 메시지 JSON 형태로 응답
+                    Map<String, Object> res = new HashMap<>();
+                    res.put("error", error.getMessage());
+                    res.put("nextStep", "/register");
+                    return Mono.just(ResponseEntity.badRequest().body(res));
+                });
     }
 
     // 로그인
@@ -65,7 +65,7 @@ public class UserController {
                     String token = jwtUtil.generateToken(found.getUserEmail(), "USER");
                     long expiresAt = System.currentTimeMillis() + jwtUtil.getExpiration();
 
-                     Map<String, Object> res = new HashMap<>();
+                    Map<String, Object> res = new HashMap<>();
                     res.put("message", "사용자 로그인 성공");
                     res.put("userEmail", found.getUserEmail());
                     res.put("token", token);
@@ -77,8 +77,8 @@ public class UserController {
                 })
                 .switchIfEmpty(Mono.just(ResponseEntity.status(401).body(
                         Map.of(
-                            "message", "이메일 또는 비밀번호가 올바르지 않습니다.",
-                            "nextStep", "/login"
+                                "message", "이메일 또는 비밀번호가 올바르지 않습니다.",
+                                "nextStep", "/login"
                         )
                 )));
     }

@@ -13,6 +13,6 @@ public class EmotionScoreService {
     private final EmotionScoreRecordRepository repository;
 
     public Flux<EmotionScoreRecord> getUserScores(String userEmail) {
-        return repository.findByUserEmailOrderByEmotionDateDesc(userEmail);
+        return repository.findAllByUserEmailOrderByEmotionDate(userEmail);
     }
 }

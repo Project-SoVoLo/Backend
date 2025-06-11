@@ -19,13 +19,13 @@ public class CustomUserDetailsService implements ReactiveUserDetailsService {
     @Override
     public Mono<UserDetails> findByUsername(String email){
         return userRepository.findByUserEmail(email)
-            .map(user -> User.builder()
-                .username(user.getUserEmail())
-                    // 카카오 로그인 유저는 password가 없으니까 빈 문자열으로 채워넣기
-                    .password(user.getPassword() != null ? user.getPassword() : "")
-                .roles("USER")
-                .build()
-            );
+                .map(user -> User.builder()
+                        .username(user.getUserEmail())
+                        // 카카오 로그인 유저는 password가 없으니까 빈 문자열으로 채워넣기
+                        .password(user.getPassword() != null ? user.getPassword() : "")
+                        .roles("USER")
+                        .build()
+                );
     }
 
 }
