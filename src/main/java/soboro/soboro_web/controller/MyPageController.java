@@ -11,6 +11,8 @@ import soboro.soboro_web.domain.EmotionScoreRecord;
 import soboro.soboro_web.domain.enums.EmotionTypes;
 import soboro.soboro_web.dto.ChatSummaryRequest;
 import soboro.soboro_web.dto.ChatSummaryResponse;
+import soboro.soboro_web.dto.UserProfileResponse;
+import soboro.soboro_web.repository.UserRepository;
 import soboro.soboro_web.service.ChatSummaryService;
 
 @RestController
@@ -19,6 +21,42 @@ import soboro.soboro_web.service.ChatSummaryService;
 public class MyPageController {
 
     private final ChatSummaryService chatSummaryService;
+    private final UserRepository userRepository;
+
+    // 마이페이지 메인 조회
+    @GetMapping
+    public Mono<ResponseEntity<String>> getMyPage() {
+        return ReactiveSecurityContextHolder.getContext()
+                .map(ctx -> {
+                    System.out.println("🔐 Authentication: " + ctx.getAuthentication());
+                    return ctx.getAuthentication().getName();
+                })
+                .map(userEmail -> {
+                    // 여기서는 단순히 마이페이지 접근 확인용
+                    return ResponseEntity.ok("마이페이지 화면 - 사용자: " + userEmail);
+                });
+    }
+
+    // 프로필 조회
+    @GetMapping("/profile")
+    public Mono<ResponseEntity<UserProfileResponse>> getMyProfile(){
+        return ReactiveSecurityContextHolder.getContext()
+                .map(ctx -> ctx.getAuthentication().getName())
+                .flatMap(userEmail ->
+                        userRepository.findByUserEmail(userEmail)
+                                .map(user -> ResponseEntity.ok(
+                                        new UserProfileResponse(
+                                                user.getUserEmail(),
+                                                user.getNickname(),
+                                                user.getUserName(),
+                                                user.getUserPhone(),
+                                                user.getUserBirth(),
+                                                user.getUserGender()
+                                        )
+                                ))
+                )
+                .switchIfEmpty(Mono.just(ResponseEntity.notFound().build()));
+    }
 
     // 챗봇 상담 내역 요약 저장
     @PostMapping("/chat-summaries")

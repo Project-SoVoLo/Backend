@@ -1,8 +1,10 @@
 package soboro.soboro_web.controller;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 import soboro.soboro_web.domain.User;
 import soboro.soboro_web.dto.UserExtraInfoRequest;
+import soboro.soboro_web.dto.UserUpdateRequest;
 import soboro.soboro_web.repository.UserRepository;
 import soboro.soboro_web.jwt.JwtUtil;
 import soboro.soboro_web.service.UserService;
@@ -100,4 +103,63 @@ public class UserController {
                         .body("사용자 정보를 찾을 수 없음")));
     }
 
+    // 개인정보 수정 (JWT 기반)
+    @PostMapping("/edit-info")
+    public Mono<ResponseEntity<Map<String, Object>>> editUserInfo(
+            @RequestBody UserUpdateRequest request,
+            ServerHttpRequest httpRequest
+    ){
+        // Authorization 헤더에서 JWT 꺼내기
+        String token = httpRequest.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        if(token == null || !token.startsWith("Bearer ")){
+            return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "토큰이 없습니다.")));
+        }
+        token = token.substring(7); // "Bearer " 제거
+
+        // 토큰에서 사용자 이메일 추출
+        String email;
+        try{
+            email = jwtUtil.getUsernameFromToken(token);
+        }catch(Exception e) {
+            return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "토큰이 없습니다.")));
+        }
+
+        return userRepository.findByUserEmail(email)
+                .flatMap(user ->{
+                    // 새 이메일(중복 체크는 따로 서비스에서)
+                    if(request.getNewEmail() != null){
+                        user.setUserEmail(request.getNewEmail());
+                    }
+                    // 이름 변경
+                    if(request.getUserName() != null){
+                        user.setUserName(request.getUserName());
+                    }
+                    // 닉네임 변경
+                    if(request.getNickname() != null){
+                        user.setNickname(request.getNickname());
+                    }
+                    // 전화번호 변경
+                    if(request.getUserPhone() != null){
+                        user.setUserPhone(request.getUserPhone());
+                    }
+                    // 비밀번호 변경(암호화 필수)
+                    if(request.getNewPassword() != null){
+                        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+                    }
+
+                    return userRepository.save(user);
+                })
+                .map(updatedUser -> {
+                    Map<String, Object> res = new HashMap<>();
+                    res.put("message", "개인정보 수정 완료");
+                    res.put("userEmail", updatedUser.getUserEmail());
+                    res.put("nickname", updatedUser.getNickname());
+                    res.put("nextStep", "/api/mypage/profile"); // 완료 후 마이페이지의 프로필 화면으로
+                    return ResponseEntity.ok(res);
+                })
+                .switchIfEmpty(Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "사용자를 찾을 수 없습니다."))));
+    }
 }
