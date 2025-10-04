@@ -53,7 +53,8 @@ public class ReactiveSecurityConfig {
                                 "/api/nlp/emotion_class","/api/diagnosis/types","/api/phq9/predict",
                                 "/api/chatbot/ask",
                                 "/api/rasa/classification","/api/chatbot/full",
-                                "/api/inquiry/all", "/api/inquiry"
+                                "/api/inquiry/all", "/api/inquiry",
+                                "/api/center"
 
                         ).permitAll()
                         .anyExchange().authenticated()
