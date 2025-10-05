@@ -10,6 +10,7 @@ build/
 .env
 src/main/resources/sovolo_nlp_key_dy.json
 src/main/resources/sovolo_nlp_key_ah.json
+src/main/resources/application.properties
 
 ### STS ###
 .apt_generated
