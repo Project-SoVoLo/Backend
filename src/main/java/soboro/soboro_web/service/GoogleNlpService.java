@@ -24,7 +24,7 @@ public class GoogleNlpService {
     // google cloud api key 불러오기 (키 json 파일 없을 시 기능 비활성화 됨 - 팀원 간 공유)
     public GoogleNlpService() {
         try {
-            InputStream stream = new ClassPathResource("sovolo_nlp_key_dy.json").getInputStream();
+            InputStream stream = new ClassPathResource("sovolo_nlp_key_ah.json").getInputStream();
             if (stream == null) {
                 System.out.println("⚠️ google-nlp-key.json not found. NLP 기능은 비활성화됩니다.");
                 this.language = null;
