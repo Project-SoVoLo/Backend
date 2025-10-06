@@ -115,7 +115,7 @@ public class UserController {
             return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "토큰이 없습니다.")));
         }
-        token = token.substring(7); // "Bearer " 제거
+        token = token.substring(7).trim(); // "Bearer " 제거 + 공백 방지
 
         // 토큰에서 사용자 이메일 추출
         String email;
@@ -126,31 +126,7 @@ public class UserController {
                     .body(Map.of("error", "토큰이 없습니다.")));
         }
 
-        return userRepository.findByUserEmail(email)
-                .flatMap(user ->{
-                    // 새 이메일(중복 체크는 따로 서비스에서)
-                    if(request.getNewEmail() != null){
-                        user.setUserEmail(request.getNewEmail());
-                    }
-                    // 이름 변경
-                    if(request.getUserName() != null){
-                        user.setUserName(request.getUserName());
-                    }
-                    // 닉네임 변경
-                    if(request.getNickname() != null){
-                        user.setNickname(request.getNickname());
-                    }
-                    // 전화번호 변경
-                    if(request.getUserPhone() != null){
-                        user.setUserPhone(request.getUserPhone());
-                    }
-                    // 비밀번호 변경(암호화 필수)
-                    if(request.getNewPassword() != null){
-                        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-                    }
-
-                    return userRepository.save(user);
-                })
+        return userService.updateUserInfo(email, request)
                 .map(updatedUser -> {
                     Map<String, Object> res = new HashMap<>();
                     res.put("message", "개인정보 수정 완료");
@@ -159,6 +135,10 @@ public class UserController {
                     res.put("nextStep", "/api/mypage/profile"); // 완료 후 마이페이지의 프로필 화면으로
                     return ResponseEntity.ok(res);
                 })
+                .onErrorResume(e ->
+                        Mono.just(ResponseEntity.badRequest()
+                                .body(Map.of("error", e.getMessage())))
+                )
                 .switchIfEmpty(Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "사용자를 찾을 수 없습니다."))));
     }
