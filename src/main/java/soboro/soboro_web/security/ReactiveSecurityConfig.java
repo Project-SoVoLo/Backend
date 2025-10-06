@@ -54,7 +54,9 @@ public class ReactiveSecurityConfig {
                                 "/api/chatbot/ask",
                                 "/api/rasa/classification","/api/chatbot/full",
                                 "/api/inquiry/all", "/api/inquiry",
-                                "/api/center"
+                                "/api/center",
+
+                                "/api/notice", "/api/notice/**"
 
                         ).permitAll()
                         .anyExchange().authenticated()
