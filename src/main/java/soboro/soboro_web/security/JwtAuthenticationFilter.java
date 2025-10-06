@@ -38,30 +38,41 @@ public class JwtAuthenticationFilter implements WebFilter {
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain){
         String token = resolveToken(exchange.getRequest());
 
-        if(token != null && jwtUtil.validateToken(token)){
-            String email = jwtUtil.getUsernameFromToken(token);
-            String role = jwtUtil.getRoleFromToken(token);
-
-            return userDetailsService.findByUsername(email)
-                    .flatMap(userDetails -> {
-                        List<GrantedAuthority> authorityList =
-                                List.of(new SimpleGrantedAuthority("ROLE_" + role)); // 권한 부여
-                        Authentication auth = new UsernamePasswordAuthenticationToken(
-                                userDetails.getUsername(), null, userDetails.getAuthorities());
-
-                        // 인증 정보를 SecurityContext에 담고 다음 필터로
-                        return chain.filter(exchange)
-                                .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
-                    });
+        // 토큰이 아예 없으면 다음 필터로
+        if(token == null){
+            return chain.filter(exchange);
         }
-        // 토큰이 없거나 유효하지 않으면 다음 필터로 넘어감
-         return chain.filter(exchange);
+
+        // 토큰이 유효하지 않으면 401 리턴
+        if (!jwtUtil.validateToken(token)) {
+            exchange.getResponse().setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete(); // 응답 종료
+        }
+
+        // 유효하면 사용자 정보 추출
+        String email = jwtUtil.getUsernameFromToken(token);
+        String role = jwtUtil.getRoleFromToken(token);
+
+        return userDetailsService.findByUsername(email)
+                .flatMap(userDetails -> {
+                    List<GrantedAuthority> authorities =
+                            List.of(new SimpleGrantedAuthority("ROLE_" + role)); // 권한 부여
+
+                    Authentication auth = new UsernamePasswordAuthenticationToken(
+                            userDetails.getUsername(), null, authorities
+                    );
+
+                    // 인증 정보를 SecurityContext에 담고 다음 필터로
+                    return chain.filter(exchange)
+                            .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
+                });
+
     }
 
     // Authorization 헤더에서 Bearer 토큰 추출
     private String resolveToken(ServerHttpRequest request) {
         List<String> authHeaders = request.getHeaders().getOrEmpty(HttpHeaders.AUTHORIZATION);
-        if( !authHeaders.isEmpty() && authHeaders.get(0).startsWith("Bearer ")){
+        if(!authHeaders.isEmpty() && authHeaders.get(0).startsWith("Bearer ")){
             return authHeaders.get(0).substring(7);  // "Bearer " 다음부터 잘라냄
         }
         return null;

@@ -7,6 +7,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import soboro.soboro_web.repository.AdminRepository;
 import soboro.soboro_web.repository.UserRepository;
 
 @Service
@@ -15,17 +16,29 @@ import soboro.soboro_web.repository.UserRepository;
 public class CustomUserDetailsService implements ReactiveUserDetailsService {
 
     private final UserRepository userRepository;
+    private final AdminRepository adminRepository;
 
     @Override
     public Mono<UserDetails> findByUsername(String email){
-        return userRepository.findByUserEmail(email)
-                .map(user -> User.builder()
-                        .username(user.getUserEmail())
+
+        // 일반 유저 조회
+        Mono<UserDetails> userMono = userRepository.findByUserEmail(email)
+                .map(user -> User.withUsername(user.getUserEmail())
                         // 카카오 로그인 유저는 password가 없으니까 빈 문자열으로 채워넣기
                         .password(user.getPassword() != null ? user.getPassword() : "")
                         .roles("USER")
                         .build()
                 );
+
+        // 관리자 조회
+        Mono<UserDetails> adminMono = adminRepository.findByUserEmail(email)
+                .map(admin -> User.withUsername(admin.getUserEmail())
+                        .password(admin.getPassword() != null ? admin.getPassword() : "")
+                        .roles("ADMIN")
+                        .build()
+                );
+
+        return userMono.switchIfEmpty(adminMono);
     }
 
 }

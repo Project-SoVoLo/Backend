@@ -25,11 +25,11 @@ public class JwtUtil {
     }
 
     // 토큰 발급(로그인 성공 시) - 관리자, 사용자 구분
-    public String generateToken(String email, String role){
+    public String generateToken(String userId, String role){
         Date date = new Date();
 
         return Jwts.builder()
-                .setSubject(email)
+                .setSubject(userId)
                 .claim("role", role)
                 .setIssuedAt(date) // 발급일
                 .setExpiration(new Date(date.getTime() + jwtProperties.getExpiration())) // 만료시간
