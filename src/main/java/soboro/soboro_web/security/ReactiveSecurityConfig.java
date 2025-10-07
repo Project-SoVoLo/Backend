@@ -33,6 +33,7 @@ public class ReactiveSecurityConfig {
         return http
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
+                .httpBasic(httpBasic -> httpBasic.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))  // ✅ 변경된 CORS 설정
                 .authorizeExchange(ex -> ex
                         .pathMatchers(
@@ -56,13 +57,13 @@ public class ReactiveSecurityConfig {
                                 "/api/inquiry/all", "/api/inquiry",
                                 "/api/center",
 
-                                "/api/notice", "/api/notice/**"
+                                "/api/notice", "/api/notice/**",
+                                "/api/card/", "/api/card/**"
 
                         ).permitAll()
                         .anyExchange().authenticated()
                 )
                 .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
-                .httpBasic(httpBasic -> httpBasic.disable())
                 .build();
 
     }
