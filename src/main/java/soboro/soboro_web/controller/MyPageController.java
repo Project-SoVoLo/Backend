@@ -6,14 +6,12 @@ import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import soboro.soboro_web.domain.ChatSummary;
-import soboro.soboro_web.domain.EmotionScoreRecord;
-import soboro.soboro_web.domain.enums.EmotionTypes;
 import soboro.soboro_web.dto.ChatSummaryRequest;
 import soboro.soboro_web.dto.ChatSummaryResponse;
 import soboro.soboro_web.dto.UserProfileResponse;
 import soboro.soboro_web.repository.UserRepository;
 import soboro.soboro_web.service.ChatSummaryService;
+import soboro.soboro_web.service.MyPageService;
 
 @RestController
 @RequiredArgsConstructor
@@ -21,6 +19,7 @@ import soboro.soboro_web.service.ChatSummaryService;
 public class MyPageController {
 
     private final ChatSummaryService chatSummaryService;
+    private final MyPageService myPageService;
     private final UserRepository userRepository;
 
     // 마이페이지 메인 조회
@@ -98,6 +97,22 @@ public class MyPageController {
                                                         record.getPhqScore(),
                                                         record.getGoogleEmotion()
                                                 ))));
+    }
+
+    // 내가 북마크한 게시글 전체 조회 (커뮤니티 + 카드뉴스)
+    @GetMapping("/bookmarks")
+    public Flux<Object> getMyBookmarks() {
+        return ReactiveSecurityContextHolder.getContext()
+                .map(ctx -> ctx.getAuthentication().getName())
+                .flatMapMany(userId -> myPageService.getAllBookmarks(userId));
+    }
+
+    // 내가 좋아요한 게시글 전체 조회 (커뮤니티 + 공지)
+    @GetMapping("/likes")
+    public Flux<Object> getMyLikes() {
+        return ReactiveSecurityContextHolder.getContext()
+                .map(ctx -> ctx.getAuthentication().getName())
+                .flatMapMany(userId -> myPageService.getAllLikes(userId));
     }
 
 }
