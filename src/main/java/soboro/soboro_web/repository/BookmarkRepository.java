@@ -14,4 +14,9 @@ public interface BookmarkRepository extends ReactiveMongoRepository<Bookmark, St
 
     // 사용자 전체 북마크 조회
     Flux<Bookmark> findAllByUserId(String userId);
+
+    //북마크 개수 카운트
+    Mono<Long> countByPostId(String postId);
+    //연쇄 삭제
+    Mono<Void> deleteByPostId(String postId);
 }

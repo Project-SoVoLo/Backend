@@ -5,6 +5,5 @@ import reactor.core.publisher.Flux;
 import soboro.soboro_web.domain.CommunityPost;
 
 public interface CommunityPostRepository extends ReactiveMongoRepository<CommunityPost, String> {
-
+    Flux<CommunityPost> findAllByOrderByCreatedAtDesc();
 }
-//save,findById,findAll,deleteById,Count 기능은 기본 제공 이외는 추가하기
