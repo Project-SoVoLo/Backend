@@ -12,6 +12,7 @@ import soboro.soboro_web.dto.UserProfileResponse;
 import soboro.soboro_web.repository.UserRepository;
 import soboro.soboro_web.service.ChatSummaryService;
 import soboro.soboro_web.service.MyPageService;
+import soboro.soboro_web.dto.CommunityResponseDto;
 
 @RestController
 @RequiredArgsConstructor
@@ -113,6 +114,14 @@ public class MyPageController {
         return ReactiveSecurityContextHolder.getContext()
                 .map(ctx -> ctx.getAuthentication().getName())
                 .flatMapMany(userId -> myPageService.getAllLikes(userId));
+    }
+
+    //내가 작성한 게시글 조회
+    @GetMapping("/community-posts")
+    public Flux<CommunityResponseDto> getMyCommunityPosts() {
+        return ReactiveSecurityContextHolder.getContext()
+                .map(ctx -> ctx.getAuthentication().getName()) // 이메일
+                .flatMapMany(myPageService::getMyCommunityPosts);
     }
 
 }

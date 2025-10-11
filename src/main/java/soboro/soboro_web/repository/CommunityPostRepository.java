@@ -6,4 +6,5 @@ import soboro.soboro_web.domain.CommunityPost;
 
 public interface CommunityPostRepository extends ReactiveMongoRepository<CommunityPost, String> {
     Flux<CommunityPost> findAllByOrderByCreatedAtDesc();
+    Flux<CommunityPost> findAllByUserIdOrderByCreatedAtDesc(String userId);
 }
