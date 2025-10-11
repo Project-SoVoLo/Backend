@@ -6,6 +6,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PostBlock {
-    private String type;    // 텍스트 or 이미지
-    private String content; // 텍스트 or 이미지 URL
+    private String type;
+    private String content;
+    private String url;
+    private String alt;
 }
