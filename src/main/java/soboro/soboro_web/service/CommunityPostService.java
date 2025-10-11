@@ -83,12 +83,26 @@ public class CommunityPostService {
     }
     //삭제
     public Mono<Void> delete(String id, String loginEmail, boolean isAdmin) {
+        //관리자인 경우 바로 삭제
+        if (isAdmin) {
+            return postRepo.findById(id)
+                    .flatMap(existing -> {
+                        Mono<Void> delLikes = likeRepo.deleteByPostId(id);
+                        Mono<Void> delBookmarks = bookmarkRepo.deleteByPostId(id);
+                        Mono<Void> delComments = commentRepo.deleteByPostId(id);
+                        return Mono.when(delLikes, delBookmarks, delComments)
+                                .then(postRepo.delete(existing));
+                    });
+            // .switchIfEmpty(Mono.error(new IllegalStateException("게시글을 찾을 수 없습니다."))); // 필요 시 404 처리
+        }
+
+        //일반 사용자인 경우 확인 후 삭제
         return loadUser(loginEmail)
                 .flatMap(u -> postRepo.findById(id)
                         .flatMap(existing -> {
                             boolean owner = existing.getUserId() != null
                                     && existing.getUserId().equals(u.getUserId());
-                            if (!(owner || isAdmin)) {
+                            if (!owner) {
                                 return Mono.error(new IllegalAccessException("삭제 권한이 없습니다."));
                             }
 
@@ -98,9 +112,10 @@ public class CommunityPostService {
 
                             return Mono.when(delLikes, delBookmarks, delComments)
                                     .then(postRepo.delete(existing));
-                        })
-                );
+                        }));
+        // .switchIfEmpty(Mono.error(new IllegalStateException("게시글을 찾을 수 없습니다."))); // 필요 시 404 처리
     }
+
 
     //북마크
     public Mono<Boolean> toggleBookmark(String userId, String postId) {
@@ -164,18 +179,28 @@ public class CommunityPostService {
     }
 
     //댓글 삭제
+
     public Mono<CommentDto.MessageRes> deleteComment(String commentId, String loginEmail, boolean isAdmin) {
+        //관리자인 경우 바로 삭제
+        if (isAdmin) {
+            return commentRepo.findById(commentId)
+                    .flatMap(c -> commentRepo.delete(c)
+                            .then(refreshCommentCount(c.getPostId()))
+                            .thenReturn(new CommentDto.MessageRes("deleted")));
+        }
+
+        //일반 사용자인 경우 확인 후 삭제
         return loadUser(loginEmail)
                 .flatMap(u -> commentRepo.findById(commentId)
                         .flatMap(c -> {
                             boolean owner = u.getUserId().equals(c.getUserId());
-                            if (!(owner || isAdmin)) return Mono.error(new IllegalAccessException("삭제 권한이 없습니다."));
-                            String postId = c.getPostId();
+                            if (!owner) return Mono.error(new IllegalAccessException("삭제 권한이 없습니다."));
                             return commentRepo.delete(c)
-                                    .then(refreshCommentCount(postId))
+                                    .then(refreshCommentCount(c.getPostId()))
                                     .thenReturn(new CommentDto.MessageRes("deleted"));
                         }));
     }
+
 
     //헬퍼
     // Entity -> Response DTO 매핑
