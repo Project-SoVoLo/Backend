@@ -41,6 +41,7 @@ public class InquiryDto {
     // 열람 요청 시 포함된 댓글 응답
     public record CommentDto(
             String userId,
+            String userName,
             String content,
             String date
     ) {}
@@ -57,6 +58,7 @@ public class InquiryDto {
     // 댓글 작성 요청
     public record CommentCreateReq(
             @NotBlank String userId,
+            @NotBlank String userName,
             @NotBlank String content
     ) {}
 
@@ -64,6 +66,7 @@ public class InquiryDto {
     public record CommentCreateRes(
             String commentId,
             String userId,
+            String userName,
             String content,
             String date
     ) {}
