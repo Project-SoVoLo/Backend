@@ -70,7 +70,7 @@ public class InquiryService {
                 .map(i -> new InquiryDto.ReadRes(
                         i.getId(), i.getTitle(), i.getContent(),
                         i.getComments().stream()
-                                .map(c -> new InquiryDto.CommentDto(c.getUserId(), c.getContent(), c.getDate().toString()))
+                                .map(c -> new InquiryDto.CommentDto(c.getUserId(), c.getUserName(), c.getContent(), c.getDate().toString()))
                                 .toList()
                 ));
     }
@@ -88,10 +88,16 @@ public class InquiryService {
                     var now = Instant.now();
                     var cmtId = UUID.randomUUID().toString();
                     var comment = InquiryComment.builder()
-                            .id(cmtId).userId(req.userId()).content(req.content()).date(now).build();
+                            .id(cmtId)
+                            .userId(req.userId())
+                            .userName(req.userName())
+                            .content(req.content())
+                            .date(now)
+                            .build();
                     i.getComments().add(comment);
                     i.setUpdatedAt(now);
-                    return repo.save(i).thenReturn(new InquiryDto.CommentCreateRes(cmtId, req.userId(), req.content(), now.toString()));
+                    return repo.save(i)
+                            .thenReturn(new InquiryDto.CommentCreateRes(cmtId, req.userId(), req.userName(), req.content(), now.toString()));
                 });
     }
 

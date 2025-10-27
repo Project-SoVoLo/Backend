@@ -8,6 +8,7 @@ import java.time.Instant;
 public class InquiryComment {
     private String id;
     private String userId;
+    private String userName;
     private String content;
     private Instant date;
 }
