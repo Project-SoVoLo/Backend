@@ -47,6 +47,7 @@ public class ReactiveSecurityConfig {
 
                                 "/", "/index.html",
                                 "/static/**", "/css/**", "/js/**",
+                                "/admin-dashboard-test.html",
                                 "/api/oauth/**",
                                 "/favicon.ico", "/manifest.json", "/logo192.png",
 

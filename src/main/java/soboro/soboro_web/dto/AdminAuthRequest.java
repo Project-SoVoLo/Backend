@@ -1,0 +1,12 @@
+package soboro.soboro_web.dto;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter @Setter @NoArgsConstructor
+public class AdminAuthRequest {
+    private String userEmail;
+    private String password;
+    private String userName;
+}
