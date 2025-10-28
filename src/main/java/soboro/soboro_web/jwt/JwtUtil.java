@@ -26,36 +26,39 @@ public class JwtUtil {
 
     // 토큰 발급(로그인 성공 시) - 관리자, 사용자 구분
     public String generateToken(String userId, String role){
-        Date date = new Date();
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + jwtProperties.getExpiration()); // ms 단위
 
         return Jwts.builder()
                 .setSubject(userId)
                 .claim("role", role)
-                .setIssuedAt(date) // 발급일
-                .setExpiration(new Date(date.getTime() + jwtProperties.getExpiration())) // 만료시간
+                .setIssuedAt(now) // 발급일
+                .setExpiration(expiry) // 만료시간
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256) // 암호 알고리즘
                 .compact();
     }
 
     // 토큰 검증
-    public boolean validateToken(String token){
-        try{
-            // JWT 파싱
+    public String validateTokenAndGetStatus(String token) {
+        try {
             Jwts.parserBuilder()
                     .setSigningKey(getSigningKey())
                     .build()
                     .parseClaimsJws(token);
-            return true;
-        }catch(SecurityException | MalformedJwtException | io.jsonwebtoken.security.SignatureException e){
-            logger.error("유효하지 않은 JWT 서명입니다.");
-        }catch (ExpiredJwtException e){
+            return "VALID";
+        } catch (ExpiredJwtException e) {
             logger.error("만료된 JWT 토큰입니다.");
-        }catch (UnsupportedJwtException e){
+            return "EXPIRED";
+        } catch (SecurityException | MalformedJwtException | io.jsonwebtoken.security.SignatureException e) {
+            logger.error("유효하지 않은 JWT 서명입니다.");
+            return "INVALID_SIGNATURE";
+        } catch (UnsupportedJwtException e) {
             logger.error("지원되지 않는 JWT 토큰입니다.");
-        }catch (IllegalArgumentException e){
+            return "UNSUPPORTED";
+        } catch (IllegalArgumentException e) {
             logger.error("잘못된 JWT 토큰 입니다.");
+            return "ILLEGAL";
         }
-         return false;
     }
 
     // 토큰에서 사용자 이메일 추출

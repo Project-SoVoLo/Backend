@@ -15,6 +15,8 @@ import soboro.soboro_web.domain.User;
 import soboro.soboro_web.jwt.JwtUtil;
 import soboro.soboro_web.repository.UserRepository;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,11 +34,12 @@ public class KaKaoAuthController {
     @Value("${kakao.redirect-uri}")
     private String redirectUri;
 
+    // 카카오 로그인 페이지 리디렉션
     @GetMapping("/api/oauth/kakao/login")
     public Mono<ResponseEntity<Void>> redirectToKakao() {
         String kakaoAuthUrl = "https://kauth.kakao.com/oauth/authorize?response_type=code"
-                + "&client_id=" + clientId
-                + "&redirect_uri=" + redirectUri;
+                + "&client_id=" + URLEncoder.encode(clientId, StandardCharsets.UTF_8)
+                + "&redirect_uri=" + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8);
 
         return Mono.just(ResponseEntity.status(HttpStatus.FOUND)
                 .header(HttpHeaders.LOCATION, kakaoAuthUrl)
@@ -75,7 +78,7 @@ public class KaKaoAuthController {
                                         .flatMap(user -> {
                                             // ✅ JWT 발급 추가
                                             String jwt = jwtUtil.generateToken(email, "USER");
-                                            long expiresAt = System.currentTimeMillis() + jwtUtil.getExpiration();
+                                            long expiresAt = System.currentTimeMillis() + (jwtUtil.getExpiration() * 1000L);
 
                                             Map<String, Object> result = new HashMap<>();
                                             result.put("message", "카카오 로그인 성공");

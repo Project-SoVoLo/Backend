@@ -38,7 +38,7 @@ public class UserController {
         return userService.register(user)
                 .map(savedUser -> {
                     String token = jwtUtil.generateToken(savedUser.getUserEmail(), "USER");
-                    long expiresAt = System.currentTimeMillis() + jwtUtil.getExpiration();
+                    long expiresAt = System.currentTimeMillis() + (jwtUtil.getExpiration() * 1000L);
 
                     Map<String, Object> res = new HashMap<>();
                     res.put("message", "사용자 회원가입 성공");
@@ -47,26 +47,24 @@ public class UserController {
                     res.put("expiresAt", expiresAt);
                     res.put("role", "USER");
                     res.put("nextStep", "/home");
-
                     return ResponseEntity.ok(res);
                 })
-                .onErrorResume(error -> {
-                    // 예외 발생 시 400 에러 + 메시지 JSON 형태로 응답
+                .onErrorResume(e -> {
                     Map<String, Object> res = new HashMap<>();
-                    res.put("error", error.getMessage());
+                    res.put("error", e.getMessage());
                     res.put("nextStep", "/register");
                     return Mono.just(ResponseEntity.badRequest().body(res));
                 });
     }
 
-    // 로그인
+    // 로그인 + JWT 발급
     @PostMapping("/login")
-    public Mono<ResponseEntity<Map<String, Object>>> login(@RequestBody User user){
+    public Mono<ResponseEntity<Map<String, Object>>> login(@RequestBody User user) {
         return userService.findByUserEmail(user.getUserEmail())
                 .filter(found -> passwordEncoder.matches(user.getPassword(), found.getPassword()))
                 .map(found -> {
                     String token = jwtUtil.generateToken(found.getUserEmail(), "USER");
-                    long expiresAt = System.currentTimeMillis() + jwtUtil.getExpiration();
+                    long expiresAt = System.currentTimeMillis() + (jwtUtil.getExpiration() * 1000L);
 
                     Map<String, Object> res = new HashMap<>();
                     res.put("message", "사용자 로그인 성공");
@@ -75,14 +73,10 @@ public class UserController {
                     res.put("expiresAt", expiresAt);
                     res.put("role", "USER");
                     res.put("nextStep", "/home");
-
                     return ResponseEntity.ok(res);
                 })
                 .switchIfEmpty(Mono.just(ResponseEntity.status(401).body(
-                        Map.of(
-                                "message", "이메일 또는 비밀번호가 올바르지 않습니다.",
-                                "nextStep", "/login"
-                        )
+                        Map.of("error", "이메일 또는 비밀번호가 올바르지 않습니다.", "nextStep", "/login")
                 )));
     }
 
@@ -108,23 +102,15 @@ public class UserController {
     public Mono<ResponseEntity<Map<String, Object>>> editUserInfo(
             @RequestBody UserUpdateRequest request,
             ServerHttpRequest httpRequest
-    ){
-        // Authorization 헤더에서 JWT 꺼내기
+    ) {
         String token = httpRequest.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        if(token == null || !token.startsWith("Bearer ")){
+        if (token == null || !token.startsWith("Bearer ")) {
             return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "토큰이 없습니다.")));
         }
-        token = token.substring(7).trim(); // "Bearer " 제거 + 공백 방지
 
-        // 토큰에서 사용자 이메일 추출
-        String email;
-        try{
-            email = jwtUtil.getUsernameFromToken(token);
-        }catch(Exception e) {
-            return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "토큰이 없습니다.")));
-        }
+        token = token.substring(7).trim();
+        String email = jwtUtil.getUsernameFromToken(token);
 
         return userService.updateUserInfo(email, request)
                 .map(updatedUser -> {
@@ -132,13 +118,9 @@ public class UserController {
                     res.put("message", "개인정보 수정 완료");
                     res.put("userEmail", updatedUser.getUserEmail());
                     res.put("nickname", updatedUser.getNickname());
-                    res.put("nextStep", "/api/mypage/profile"); // 완료 후 마이페이지의 프로필 화면으로
+                    res.put("nextStep", "/api/mypage/profile");
                     return ResponseEntity.ok(res);
                 })
-                .onErrorResume(e ->
-                        Mono.just(ResponseEntity.badRequest()
-                                .body(Map.of("error", e.getMessage())))
-                )
                 .switchIfEmpty(Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "사용자를 찾을 수 없습니다."))));
     }

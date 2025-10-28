@@ -2,6 +2,7 @@ package soboro.soboro_web.security;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -16,11 +17,12 @@ import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 import soboro.soboro_web.jwt.JwtUtil;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Component
 public class JwtAuthenticationFilter implements WebFilter {
-    // 요청 헤더의 JWT 검증 & 사용자 인증 객체(Security Context) 주입
+
     private final JwtUtil jwtUtil;
     private final ReactiveUserDetailsService userDetailsService;
 
@@ -35,45 +37,63 @@ public class JwtAuthenticationFilter implements WebFilter {
 
     // 요청이 들어올 때마다 filter로 jwt 검사
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain){
+    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String token = resolveToken(exchange.getRequest());
 
-        // 토큰이 아예 없으면 다음 필터로
-        if(token == null){
+        // 토큰이 없으면 (예: 로그인/회원가입) 그냥 통과
+        if (token == null) {
             return chain.filter(exchange);
         }
 
-        // 토큰이 유효하지 않으면 401 리턴
-        if (!jwtUtil.validateToken(token)) {
-            exchange.getResponse().setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
-            return exchange.getResponse().setComplete(); // 응답 종료
+        // 토큰 상태 확인
+        String status = jwtUtil.validateTokenAndGetStatus(token);
+
+        if (!"VALID".equals(status)) {
+            // 만료 또는 잘못된 토큰이면 401 + JSON 반환
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            exchange.getResponse().getHeaders().set("Content-Type", "application/json; charset=UTF-8");
+
+            String message = switch (status) {
+                case "EXPIRED" -> "토큰이 만료되었습니다.";
+                case "INVALID_SIGNATURE" -> "유효하지 않은 서명입니다.";
+                case "UNSUPPORTED" -> "지원되지 않는 토큰 형식입니다.";
+                case "ILLEGAL" -> "잘못된 토큰 형식입니다.";
+                default -> "인증에 실패했습니다.";
+            };
+
+            String json = String.format(
+                    "{\"error\":\"%s\",\"status\":\"%s\",\"nextStep\":\"/login\"}",
+                    message, status
+            );
+
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            return exchange.getResponse()
+                    .writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(bytes)));
         }
 
-        // 유효하면 사용자 정보 추출
+        // 토큰이 유효하면 사용자 인증 주입
         String email = jwtUtil.getUsernameFromToken(token);
         String role = jwtUtil.getRoleFromToken(token);
 
         return userDetailsService.findByUsername(email)
                 .flatMap(userDetails -> {
                     List<GrantedAuthority> authorities =
-                            List.of(new SimpleGrantedAuthority("ROLE_" + role)); // 권한 부여
+                            List.of(new SimpleGrantedAuthority("ROLE_" + role));
 
                     Authentication auth = new UsernamePasswordAuthenticationToken(
                             userDetails.getUsername(), null, authorities
                     );
 
-                    // 인증 정보를 SecurityContext에 담고 다음 필터로
                     return chain.filter(exchange)
                             .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
                 });
-
     }
 
     // Authorization 헤더에서 Bearer 토큰 추출
     private String resolveToken(ServerHttpRequest request) {
         List<String> authHeaders = request.getHeaders().getOrEmpty(HttpHeaders.AUTHORIZATION);
         if(!authHeaders.isEmpty() && authHeaders.get(0).startsWith("Bearer ")){
-            return authHeaders.get(0).substring(7);  // "Bearer " 다음부터 잘라냄
+            return authHeaders.get(0).substring(7);
         }
         return null;
     }
