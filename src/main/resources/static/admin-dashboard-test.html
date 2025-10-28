@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sovolo Admin Dashboard Preview</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --text: #1f2933;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-light: #dbeafe;
+      --border: #e5e7eb;
+      --success: #0ea5e9;
+      --error: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Pretendard", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    header h1 {
+      margin: 0 0 12px;
+      font-size: 20px;
+    }
+    header .controls {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      align-items: center;
+    }
+    header label {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    input[type="text"], input[type="number"] {
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+      color: inherit;
+    }
+    input[type="text"]:focus, input[type="number"]:focus {
+      border-color: var(--accent);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+    button {
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(37, 99, 235, 0.2);
+    }
+    main {
+      flex: 1;
+      display: flex;
+      padding: 24px;
+      gap: 24px;
+    }
+    aside.user-panel {
+      flex: 0 0 320px;
+      background: var(--panel);
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: calc(100vh - 120px);
+      position: sticky;
+      top: 96px;
+    }
+    .user-panel header {
+      all: unset;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .user-panel header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .user-panel header span {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .user-search {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .user-search .row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+    .user-table-wrapper {
+      flex: 1;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      min-width: 280px;
+    }
+    thead {
+      background: var(--accent-light);
+      color: var(--accent);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      white-space: nowrap;
+    }
+    tbody tr:hover {
+      background: rgba(37, 99, 235, 0.08);
+    }
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .pagination button {
+      background: #e2e8f0;
+      color: var(--text);
+      box-shadow: none;
+    }
+    .dashboard-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    section {
+      background: var(--panel);
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+      padding: 20px 24px;
+    }
+    section h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    section h2 .subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+    .board-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(180px, 1fr));
+      gap: 16px;
+    }
+    .board-card {
+      background: var(--accent-light);
+      color: var(--accent);
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      min-height: 120px;
+    }
+    .board-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(37, 99, 235, 0.35);
+    }
+    .board-card strong {
+      font-size: 16px;
+    }
+    .board-card span {
+      font-size: 13px;
+      color: rgba(37, 99, 235, 0.75);
+    }
+    .board-card .link {
+      margin-top: auto;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .board-card.inactive {
+      background: #f3f4f6;
+      color: var(--muted);
+      cursor: default;
+      box-shadow: none;
+    }
+    .board-card.inactive .link {
+      color: var(--muted);
+    }
+    .comments-toolbar {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    .comments-toolbar label {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .comments-list {
+      margin: 16px 0 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-height: 320px;
+      overflow: auto;
+    }
+    .comment-item {
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+    .comment-item header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      gap: 12px;
+    }
+    .comment-item header strong {
+      font-size: 14px;
+    }
+    .comment-item header span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .comment-item .excerpt {
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .comment-item a {
+      font-size: 12px;
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      background: var(--text);
+      color: #fff;
+      font-size: 14px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      pointer-events: none;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    @media (max-width: 1080px) {
+      main {
+        flex-direction: column;
+      }
+      aside.user-panel {
+        position: static;
+        max-height: none;
+        width: 100%;
+      }
+    }
+    @media (max-width: 720px) {
+      .board-grid {
+        grid-template-columns: 1fr;
+      }
+      header .controls {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Sovolo Admin Dashboard Preview</h1>
+    <div class="controls">
+      <label>
+        Base URL
+        <input id="baseUrl" type="text" value="http://localhost:8080">
+      </label>
+      <label>
+        Admin JWT (Bearer 제외)
+        <input id="token" type="text" placeholder="로그인 시 발급되는 토큰 입력...">
+      </label>
+      <label>
+        상태 메시지
+        <input id="statusMessage" type="text" readonly style="background:#f8fafc; cursor: default;">
+      </label>
+      <button id="refreshAll" type="button">전체 새로고침</button>
+    </div>
+  </header>
+
+  <main>
+    <aside class="user-panel">
+      <header>
+        <h2>사용자 목록</h2>
+        <span id="userSummary">–</span>
+      </header>
+
+      <div class="user-search">
+        <label>
+          검색어
+          <input id="query" type="text" placeholder="이름 또는 이메일">
+        </label>
+        <div class="row">
+          <label>
+            page (0부터)
+            <input id="page" type="number" value="0" min="0">
+          </label>
+          <label>
+            size
+            <input id="size" type="number" value="10" min="1" max="50">
+          </label>
+        </div>
+        <button id="loadUsers" type="button">사용자 조회</button>
+      </div>
+
+      <div class="user-table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>이름</th>
+              <th>이메일</th>
+              <th>ID</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody">
+            <tr><td colspan="3" style="text-align:center; padding:24px;">데이터가 없습니다.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <button id="prevPage" type="button">이전</button>
+        <span id="pageInfo">0 / 0</span>
+        <button id="nextPage" type="button">다음</button>
+      </div>
+    </aside>
+
+    <div class="dashboard-main">
+      <section class="boards">
+        <h2>
+          게시판 바로가기
+          <span class="subtitle">/api/admins/links</span>
+        </h2>
+        <div class="board-grid">
+          <div class="board-card inactive" data-key="notice">
+            <strong>공지사항</strong>
+            <span>공지 게시판 보기</span>
+            <div class="link">링크 없음</div>
+          </div>
+          <div class="board-card inactive" data-key="cardnews">
+            <strong>카드뉴스</strong>
+            <span>카드뉴스 목록</span>
+            <div class="link">링크 없음</div>
+          </div>
+          <div class="board-card inactive" data-key="community">
+            <strong>커뮤니티</strong>
+            <span>커뮤니티 바로가기</span>
+            <div class="link">링크 없음</div>
+          </div>
+          <div class="board-card inactive" data-key="inquiry">
+            <strong>건의함</strong>
+            <span>건의사항 관리</span>
+            <div class="link">링크 없음</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="comments">
+        <h2>
+          최근 건의 댓글
+          <span class="subtitle">/api/admins/inquiry/comments</span>
+        </h2>
+        <div class="comments-toolbar">
+          <label>
+            since (ISO, 선택)
+            <input id="since" type="text" placeholder="2025-01-01T00:00:00Z">
+          </label>
+          <label>
+            limit
+            <input id="limit" type="number" value="10" min="1" max="50">
+          </label>
+          <button id="loadComments" type="button">댓글 조회</button>
+        </div>
+        <ul id="commentList" class="comments-list">
+          <li class="comment-item" style="text-align:center; color:var(--muted); border-style:dashed;">
+            댓글 데이터를 불러오세요.
+          </li>
+        </ul>
+      </section>
+    </div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const state = {
+      page: 0,
+      size: 10,
+      total: 0,
+      links: {}
+    };
+
+    const elements = {
+      baseUrl: document.getElementById('baseUrl'),
+      token: document.getElementById('token'),
+      statusMessage: document.getElementById('statusMessage'),
+      loadUsers: document.getElementById('loadUsers'),
+      loadComments: document.getElementById('loadComments'),
+      refreshAll: document.getElementById('refreshAll'),
+      prevPage: document.getElementById('prevPage'),
+      nextPage: document.getElementById('nextPage'),
+      query: document.getElementById('query'),
+      pageInput: document.getElementById('page'),
+      sizeInput: document.getElementById('size'),
+      since: document.getElementById('since'),
+      limit: document.getElementById('limit'),
+      userSummary: document.getElementById('userSummary'),
+      userTableBody: document.getElementById('userTableBody'),
+      pageInfo: document.getElementById('pageInfo'),
+      commentList: document.getElementById('commentList'),
+      boardCards: document.querySelectorAll('.board-card'),
+      toast: document.getElementById('toast')
+    };
+
+    function showToast(message, type = 'info') {
+      elements.toast.textContent = message;
+      elements.toast.style.background = type === 'error' ? 'var(--error)' :
+                                        type === 'success' ? 'var(--success)' :
+                                        'var(--text)';
+      elements.toast.classList.add('show');
+      setTimeout(() => elements.toast.classList.remove('show'), 2000);
+    }
+
+    function setStatus(message) {
+      elements.statusMessage.value = message;
+    }
+
+    function getHeaders() {
+      const headers = { 'Content-Type': 'application/json' };
+      const token = elements.token.value.trim();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      return headers;
+    }
+
+    function getBaseUrl() {
+      return elements.baseUrl.value.replace(/\/$/, '');
+    }
+
+    async function fetchJson(path, params = {}) {
+      const url = new URL(path, getBaseUrl());
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          url.searchParams.set(key, value);
+        }
+      });
+
+      const response = await fetch(url, { headers: getHeaders() });
+      if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`${response.status} ${response.statusText}: ${errorBody}`);
+      }
+      return response.json();
+    }
+
+    function renderUsers(data) {
+      state.page = data.page ?? 0;
+      state.size = data.size ?? state.size;
+      state.total = data.total ?? 0;
+
+      const rows = data.content ?? [];
+      elements.userTableBody.innerHTML = '';
+
+      if (!rows.length) {
+        elements.userTableBody.innerHTML =
+          '<tr><td colspan="3" style="text-align:center; padding:24px;">표시할 사용자가 없습니다.</td></tr>';
+      } else {
+        rows.forEach(user => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${user.userName ?? '-'}</td>
+            <td>${user.userEmail ?? '-'}</td>
+            <td>${user.userId ?? '-'}</td>
+          `;
+          elements.userTableBody.appendChild(tr);
+        });
+      }
+
+      const totalPages = state.size ? Math.max(Math.ceil(state.total / state.size) - 1, 0) : 0;
+      elements.pageInfo.textContent = `${state.page} / ${totalPages}`;
+      elements.userSummary.textContent = `총 ${state.total}명 · page=${state.page} · size=${state.size}`;
+
+      elements.prevPage.disabled = state.page <= 0;
+      elements.nextPage.disabled = state.page >= totalPages;
+
+      elements.pageInput.value = state.page;
+      elements.sizeInput.value = state.size;
+    }
+
+    function renderLinks(data) {
+      state.links = data || {};
+      elements.boardCards.forEach(card => {
+        const key = card.dataset.key;
+        const map = {
+          notice: 'noticeUrl',
+          cardnews: 'cardnewsUrl',
+          community: 'communityUrl',
+          inquiry: 'inquriyUrl'
+        };
+        const url = data ? data[map[key]] : null;
+        const linkEl = card.querySelector('.link');
+
+        if (url) {
+          card.classList.remove('inactive');
+          linkEl.innerHTML = `<span>${url}</span>`;
+          card.onclick = () => window.open(url, '_blank', 'noopener');
+        } else {
+          card.classList.add('inactive');
+          linkEl.textContent = '링크 없음';
+          card.onclick = null;
+        }
+      });
+    }
+
+    function renderComments(data) {
+      const items = data?.items ?? [];
+      elements.commentList.innerHTML = '';
+
+      if (!items.length) {
+        elements.commentList.innerHTML =
+          '<li class="comment-item" style="text-align:center; color:var(--muted); border-style:dashed;">최근 댓글이 없습니다.</li>';
+        return;
+      }
+
+      items.forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'comment-item';
+        li.innerHTML = `
+          <header>
+            <strong>${item.title ?? '제목 없음'}</strong>
+            <span>${item.createdAt ?? ''}</span>
+          </header>
+          <div class="excerpt">${item.excerpt ?? ''}</div>
+          <div style="display:flex; justify-content:space-between; font-size:12px;">
+            <span>작성자: ${item.author ?? '-'}</span>
+            ${item.inquiryPostUrl
+              ? `<a href="${item.inquiryPostUrl}" target="_blank" rel="noopener">문의글 이동 →</a>`
+              : ''}
+          </div>
+        `;
+        elements.commentList.appendChild(li);
+      });
+    }
+
+    async function loadUsers(pageOverride) {
+      try {
+        const page = pageOverride ?? Number(elements.pageInput.value || 0);
+        const size = Number(elements.sizeInput.value || 10);
+        const query = elements.query.value.trim();
+
+        setStatus('사용자 목록 불러오는 중...');
+        const data = await fetchJson('/api/admins/users', { page, size, query });
+        renderUsers(data);
+        showToast('사용자 목록을 불러왔습니다.', 'success');
+        setStatus('사용자 목록 로드 완료');
+      } catch (err) {
+        showToast('사용자 목록 조회 실패', 'error');
+        setStatus(err.message);
+        console.error(err);
+      }
+    }
+
+    async function loadLinks() {
+      try {
+        setStatus('게시판 링크 불러오는 중...');
+        const data = await fetchJson('/api/admins/links');
+        renderLinks(data);
+        showToast('게시판 링크를 불러왔습니다.', 'success');
+        setStatus('게시판 링크 로드 완료');
+      } catch (err) {
+        renderLinks(null);
+        showToast('게시판 링크 조회 실패', 'error');
+        setStatus(err.message);
+        console.error(err);
+      }
+    }
+
+    async function loadComments() {
+      try {
+        const since = elements.since.value.trim();
+        const limit = Number(elements.limit.value || 10);
+        setStatus('댓글 피드 불러오는 중...');
+        const data = await fetchJson('/api/admins/inquiry/comments', { since, limit });
+        renderComments(data);
+        showToast('최신 댓글을 불러왔습니다.', 'success');
+        setStatus('댓글 피드 로드 완료');
+      } catch (err) {
+        showToast('댓글 조회 실패', 'error');
+        setStatus(err.message);
+        console.error(err);
+      }
+    }
+
+    elements.loadUsers.addEventListener('click', () => loadUsers());
+    elements.loadComments.addEventListener('click', loadComments);
+    elements.refreshAll.addEventListener('click', () => {
+      loadUsers();
+      loadLinks();
+      loadComments();
+    });
+    elements.prevPage.addEventListener('click', () => {
+      if (state.page > 0) loadUsers(state.page - 1);
+    });
+    elements.nextPage.addEventListener('click', () => {
+      const totalPages = state.size ? Math.ceil(state.total / state.size) : 0;
+      if (state.page + 1 < totalPages) loadUsers(state.page + 1);
+    });
+
+    (function init() {
+      renderUsers({ content: [], total: 0, page: 0, size: 10 });
+      renderLinks(null);
+      renderComments(null);
+    })();
+  </script>
+</body>
+</html>
