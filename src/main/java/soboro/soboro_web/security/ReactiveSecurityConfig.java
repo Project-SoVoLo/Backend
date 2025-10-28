@@ -37,11 +37,13 @@ public class ReactiveSecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))  // ✅ 변경된 CORS 설정
                 .authorizeExchange(ex -> ex
                         .pathMatchers(
-
+                                "/swagger",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/webjars/**",
+                                "/api-docs",
+                                "/api-docs/**",
 
                                 "/", "/index.html",
                                 "/static/**", "/css/**", "/js/**",
@@ -49,7 +51,7 @@ public class ReactiveSecurityConfig {
                                 "/favicon.ico", "/manifest.json", "/logo192.png",
 
                                 "/api/users/login", "/api/users/register",
-                                "/api/admins/register", "/api/admins/login",
+                                "/api/admins/**",
                                 "/api/users/update-info",
                                 "/api/nlp/emotion_class","/api/diagnosis/types","/api/phq9/predict",
                                 "/api/chatbot/ask",
