@@ -18,9 +18,29 @@ public class NoticeService {
     private final LikeRepository likeRepository;
 
     // 1. 공지사항 전체 조회
-    public Flux<NoticeResponseDto> getNoticeList(){
+    public Flux<NoticeResponseDto> getNoticeList(String userId) {
         return noticeRepository.findAll()
-                .flatMap(this::toDto)
+                .flatMap(notice ->
+                        likeRepository.countByPostId(notice.getPostId())
+                                .flatMap(likeCount ->
+                                        (userId == null || userId.isEmpty()
+                                                ? Mono.just(false)
+                                                : likeRepository.findByUserIdAndPostId(userId, notice.getPostId())
+                                                .map(like -> true)
+                                                .defaultIfEmpty(false))
+                                                .map(liked -> {
+                                                    NoticeResponseDto dto = new NoticeResponseDto();
+                                                    dto.setPostId(notice.getPostId());
+                                                    dto.setTitle(notice.getTitle());
+                                                    dto.setContent(notice.getContent());
+                                                    dto.setDate(notice.getDate());
+                                                    dto.setAdminId(notice.getAdminId());
+                                                    dto.setLikeCount(likeCount.intValue()); // int 변환
+                                                    dto.setLiked(liked);
+                                                    return dto;
+                                                })
+                                )
+                )
                 .switchIfEmpty(Mono.error(new RuntimeException("등록된 공지사항이 없습니다.")));
     }
 
@@ -39,10 +59,30 @@ public class NoticeService {
     }
 
     // 3. 공지사항 상세 조회
-    public Mono<NoticeResponseDto> getNotice(String noticeId){
+    public Mono<NoticeResponseDto>  getNotice(String noticeId, String userId){
         return noticeRepository.findById(noticeId)
                 .switchIfEmpty(Mono.error(new RuntimeException("공지사항을 찾을 수 없습니다.")))
-                .flatMap(this::toDto);
+                .flatMap(notice ->
+                        // userId, noticeId로 좋아요 존재 여부 확인
+                        likeRepository.findByUserIdAndPostId(userId, noticeId)
+                                .flatMap(existingLike ->
+                                        likeRepository.countByPostId(noticeId)
+                                                .map(count -> {
+                                                    NoticeResponseDto dto = toDtoSync(notice, count.intValue());
+                                                    dto.setLiked(true); // 유저가 좋아요를 눌렀음
+                                                    return dto;
+                                                })
+                                )
+                                .switchIfEmpty(
+                                        likeRepository.countByPostId(noticeId)
+                                                .map(count -> {
+                                                    NoticeResponseDto dto = toDtoSync(notice, count.intValue());
+                                                    dto.setLiked(false); // 유저가 좋아요 안 누름
+                                                    return dto;
+                                                })
+                                )
+                );
+
     }
 
     // 4. 공지사항 수정(해당글 작성한 관리자만)
@@ -83,19 +123,30 @@ public class NoticeService {
     }
 
     // 6. 공지사항 좋아요 토글
-    public Mono<NoticeResponseDto> toggleLike(String noticeId, String userId){
+    public Mono<NoticeResponseDto> toggleLike(String noticeId, String userId) {
         return noticeRepository.findById(noticeId)
                 .switchIfEmpty(Mono.error(new RuntimeException("공지사항을 찾을 수 없습니다.")))
                 .flatMap(notice ->
                         likeRepository.findByUserIdAndPostId(userId, noticeId)
+                                // 이미 좋아요 눌렀으면 -> 취소
                                 .flatMap(existing ->
-                                        likeRepository.delete(existing).thenReturn(false)) // 좋아요 취소
+                                        likeRepository.delete(existing)
+                                                .thenReturn(false) // 좋아요 취소 -> liked = false
+                                )
+                                // 안 눌렀으면 -> 추가
                                 .switchIfEmpty(
                                         likeRepository.save(new Like(userId, noticeId))
-                                                .thenReturn(true) // 좋아요 추가
+                                                .thenReturn(true) // 좋아요 추가 -> liked = true
                                 )
-                                .then(likeRepository.countByPostId(noticeId))
-                                .map(count -> toDtoSync(notice, count.intValue()))
+                                // 위 결과(Boolean liked)를 가져와서 count 계산
+                                .flatMap(liked ->
+                                        likeRepository.countByPostId(noticeId)
+                                                .map(count -> {
+                                                    NoticeResponseDto dto = toDtoSync(notice, count.intValue());
+                                                    dto.setLiked(liked);
+                                                    return dto;
+                                                })
+                                )
                 )
                 .onErrorResume(e -> Mono.error(new RuntimeException("좋아요 처리 중 오류가 발생했습니다.")));
     }
