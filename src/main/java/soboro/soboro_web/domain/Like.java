@@ -29,6 +29,7 @@ public class Like {
         this.userId = userId;
         this.postId = postId;
     }
+    private String postType;
 
     @CreatedDate
     private Instant createdAt;

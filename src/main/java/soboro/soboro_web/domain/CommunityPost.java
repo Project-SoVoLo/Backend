@@ -26,6 +26,8 @@ public class CommunityPost {
     private long bookmarkCount;
     private long commentCount;
 
+    private String postType = "community";
+
     // 최신순 정렬
     @Indexed(direction = IndexDirection.DESCENDING)
     private Instant createdAt;

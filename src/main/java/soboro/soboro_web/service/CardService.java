@@ -15,12 +15,13 @@ import soboro.soboro_web.repository.CardRepository;
 public class CardService {
     private final CardRepository cardRepository;
     private final BookmarkRepository bookmarkRepository;
+    private static final String POST_TYPE = "card";
 
     // 1. 전체 카드뉴스 목록 (로그인 사용자 기준 북마크 여부 포함)
     public Flux<CardResponseDto> getAllCards(String userId) {
         return cardRepository.findAll()
                 .flatMap(card ->
-                        bookmarkRepository.findByUserIdAndPostId(userId, card.getPostId())
+                        bookmarkRepository.findByUserIdAndPostIdAndPostType(userId, card.getPostId(), POST_TYPE)
                                 .map(b -> true)
                                 .defaultIfEmpty(false)
                                 .map(bookmarked -> toDto(card, bookmarked))
@@ -32,7 +33,7 @@ public class CardService {
         return cardRepository.findById(cardId)
                 .switchIfEmpty(Mono.error(new RuntimeException("카드를 찾을 수 없습니다.")))
                 .flatMap(card ->
-                        bookmarkRepository.findByUserIdAndPostId(userId, cardId)
+                        bookmarkRepository.findByUserIdAndPostIdAndPostType(userId, cardId, POST_TYPE)
                                 .map(b -> true)
                                 .defaultIfEmpty(false)
                                 .map(bookmarked -> toDto(card, bookmarked))
@@ -41,12 +42,14 @@ public class CardService {
 
     // 3. 카드뉴스 작성 (관리자만)
     public Mono<Card> createCard(Card card) {
+        card.setPostType(POST_TYPE);
         return cardRepository.save(card);
     }
 
     // 4. 카드뉴스 삭제 (관리자만)
     public Mono<Void> deleteCard(String id) {
-        return cardRepository.deleteById(id);
+        return bookmarkRepository.deleteByPostIdAndPostType(id, POST_TYPE)
+                .then(cardRepository.deleteById(id));
     }
 
     // 5. 북마크 토글
@@ -54,7 +57,7 @@ public class CardService {
         return cardRepository.findById(postId)
                 .switchIfEmpty(Mono.error(new RuntimeException("카드를 찾을 수 없습니다.")))
                 .flatMap(card ->
-                        bookmarkRepository.findByUserIdAndPostId(userId, postId)
+                        bookmarkRepository.findByUserIdAndPostIdAndPostType(userId, postId, POST_TYPE)
                                 // 이미 북마크 되어 있으면 삭제
                                 .flatMap(existing ->
                                         bookmarkRepository.delete(existing)
@@ -62,7 +65,7 @@ public class CardService {
                                 )
                                 // 북마크 안 되어 있으면 추가
                                 .switchIfEmpty(
-                                        bookmarkRepository.save(new Bookmark(userId, postId))
+                                        bookmarkRepository.save(createBookmark(userId, postId))
                                                 .thenReturn(true) // bookmarked = true
                                 )
                                 // 최종 DTO 구성
@@ -80,6 +83,15 @@ public class CardService {
                                 })
                 );
     }
+
+    private Bookmark createBookmark(String userId, String postId) {
+        Bookmark bookmark = new Bookmark();
+        bookmark.setUserId(userId);
+        bookmark.setPostId(postId);
+        bookmark.setPostType(POST_TYPE);
+        return bookmark;
+    }
+
     // Entity → DTO 변환 헬퍼
     private CardResponseDto toDto(Card card, boolean bookmarked) {
         CardResponseDto dto = new CardResponseDto();

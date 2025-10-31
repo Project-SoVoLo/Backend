@@ -27,52 +27,53 @@ public class MyPageService {
     private final LikeRepository likeRepository;
     private final NoticeRepository noticeRepository;
     private final UserRepository userRepository;
+    private static final String COMMUNITY_TYPE = "community";
+    private static final String CARD_TYPE = "card";
+    private static final String NOTICE_TYPE = "notice";
 
-    /** 내가 북마크한 전체(카드뉴스 + 커뮤니티) */
+
     public Flux<Object> getAllBookmarks(String userId) {
-        // 북마크한 postId들
-        Flux<String> bookmarkedPostIds = bookmarkRepository.findAllByUserId(userId)
+        Flux<String> cardIds = bookmarkRepository.findAllByUserIdAndPostType(userId, CARD_TYPE)
                 .map(Bookmark::getPostId)
                 .distinct();
+        Flux<Card> bookmarkedCards = cardIds.flatMap(cardRepository::findById);
 
-        // 카드뉴스 북마크
-        Flux<Card> bookmarkedCards = bookmarkedPostIds.flatMap(cardRepository::findById);
+        Flux<String> communityIds = bookmarkRepository.findAllByUserIdAndPostType(userId, COMMUNITY_TYPE)
+                .map(Bookmark::getPostId)
+                .distinct();
+        Flux<CommunityPost> bookmarkedCommunities = communityIds.flatMap(communityPostRepository::findById);
 
-        // 커뮤니티 북마크 ✨
-        Flux<CommunityPost> bookmarkedCommunities = bookmarkedPostIds.flatMap(communityPostRepository::findById);
-
-        // 합치기 (서로 타입이 달라서 Object로 캐스팅)
         return Flux.merge(
                 bookmarkedCards.cast(Object.class),
                 bookmarkedCommunities.cast(Object.class)
         );
     }
 
-    /** 내가 좋아요한 전체(공지사항 + 커뮤니티) */
     public Flux<Object> getAllLikes(String userId) {
-        // 좋아요한 postId들
-        Flux<String> likedPostIds = likeRepository.findAllByUserId(userId)
+        Flux<String> noticeIds = likeRepository.findAllByUserIdAndPostType(userId, NOTICE_TYPE)
                 .map(Like::getPostId)
                 .distinct();
+        Flux<Notice> likedNotices = noticeIds.flatMap(noticeRepository::findById);
 
-        // 공지 좋아요
-        Flux<Notice> likedNotices = likedPostIds.flatMap(noticeRepository::findById);
-
-        // 커뮤니티 좋아요 ✨
-        Flux<CommunityPost> likedCommunities = likedPostIds.flatMap(communityPostRepository::findById);
+        Flux<String> communityIds = likeRepository.findAllByUserIdAndPostType(userId, COMMUNITY_TYPE)
+                .map(Like::getPostId)
+                .distinct();
+        Flux<CommunityPost> likedCommunities = communityIds.flatMap(communityPostRepository::findById);
 
         return Flux.merge(
                 likedNotices.cast(Object.class),
                 likedCommunities.cast(Object.class)
         );
     }
+
+
+
     //내가 쓴 글 조회
-    public Flux<CommunityResponseDto> getMyCommunityPosts(String userEmail) {
-        return userRepository.findByUserEmail(userEmail)
-                .switchIfEmpty(Mono.error(new IllegalStateException("로그인 사용자 정보를 찾을 수 없습니다.")))
-                .flatMapMany(u -> communityPostRepository.findAllByUserIdOrderByCreatedAtDesc(u.getUserId()))
+    public Flux<CommunityResponseDto> getMyCommunityPosts(String userId) {
+        return communityPostRepository.findAllByUserIdOrderByCreatedAtDesc(userId)
                 .map(this::toResponse);
     }
+
 
     private CommunityResponseDto toResponse(CommunityPost p) {
         CommunityResponseDto dto = new CommunityResponseDto();
