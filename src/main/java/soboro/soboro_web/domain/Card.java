@@ -14,4 +14,5 @@ public class Card extends Post {
     private String adminId;
     private List<String> imageUrls;   // 카드뉴스 여러 장 이미지
     private String thumbnailUrl;      // 썸네일 이미지
+    private String postType = "card";
 }

@@ -19,8 +19,9 @@ public class NoticeController {
 
     // 1. 공지사항 목록 조회
     @GetMapping
-    public Flux<NoticeResponseDto> getNoticeList() {
-        return noticeService.getNoticeList();
+    public Flux<NoticeResponseDto> getNoticeList(Authentication authentication) {
+        String userId = (authentication != null) ? authentication.getName() : null;
+        return noticeService.getNoticeList(userId);
     }
 
     // 2. 공지사항 작성(관리자만)
@@ -37,8 +38,10 @@ public class NoticeController {
 
     // 3. 공지사항 상세 조회
     @GetMapping("/{noticeId}")
-    public Mono<ResponseEntity<NoticeResponseDto>> getNotice(@PathVariable String noticeId) {
-        return noticeService.getNotice(noticeId)
+    public Mono<ResponseEntity<NoticeResponseDto>> getNotice(@PathVariable String noticeId,
+                                                             Authentication authentication) {
+        String userId = authentication.getName();
+        return noticeService.getNotice(noticeId, userId)
                 .map(ResponseEntity::ok);
     }
 

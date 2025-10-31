@@ -7,16 +7,15 @@ import soboro.soboro_web.domain.Bookmark;
 
 public interface BookmarkRepository extends ReactiveMongoRepository<Bookmark, String> {
     // 북마크 게시물 조회
-    Mono<Bookmark> findByUserIdAndPostId(String userId, String postId);
-
+    Mono<Bookmark> findByUserIdAndPostIdAndPostType(String userId, String postId, String postType);
     // 게시물 북마크 삭제
-    Mono<Void> deleteByUserIdAndPostId(String userId, String postId);
-
+    Mono<Void> deleteByUserIdAndPostIdAndPostType(String userId, String postId, String postType);
     // 사용자 전체 북마크 조회
-    Flux<Bookmark> findAllByUserId(String userId);
-
+    Flux<Bookmark> findAllByUserIdAndPostType(String userId, String postType);
     //북마크 개수 카운트
-    Mono<Long> countByPostId(String postId);
+    Mono<Long> countByPostIdAndPostType(String postId, String postType);
     //연쇄 삭제
-    Mono<Void> deleteByPostId(String postId);
+    Mono<Void> deleteByPostIdAndPostType(String postId, String postType);
+    Mono<Boolean> existsByUserIdAndPostIdAndPostType(String userId, String postId, String postType);
+
 }

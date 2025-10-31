@@ -11,4 +11,5 @@ import java.util.List;
 @Document(collection="notice")
 public class Notice extends Post {
     private String adminId;
+    private String postType = "notice";
 }
