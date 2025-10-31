@@ -1,3 +1,4 @@
+
 package soboro.soboro_web.service;
 
 import lombok.RequiredArgsConstructor;
@@ -16,16 +17,17 @@ import soboro.soboro_web.repository.NoticeRepository;
 public class NoticeService {
     private final NoticeRepository noticeRepository;
     private final LikeRepository likeRepository;
+    private static final String POST_TYPE = "notice";
 
     // 1. 공지사항 전체 조회
     public Flux<NoticeResponseDto> getNoticeList(String userId) {
         return noticeRepository.findAll()
                 .flatMap(notice ->
-                        likeRepository.countByPostId(notice.getPostId())
+                        likeRepository.countByPostIdAndPostType(notice.getPostId(), POST_TYPE)
                                 .flatMap(likeCount ->
                                         (userId == null || userId.isEmpty()
                                                 ? Mono.just(false)
-                                                : likeRepository.findByUserIdAndPostId(userId, notice.getPostId())
+                                                : likeRepository.findByUserIdAndPostIdAndPostType(userId, notice.getPostId(), POST_TYPE)
                                                 .map(like -> true)
                                                 .defaultIfEmpty(false))
                                                 .map(liked -> {
@@ -35,7 +37,7 @@ public class NoticeService {
                                                     dto.setContent(notice.getContent());
                                                     dto.setDate(notice.getDate());
                                                     dto.setAdminId(notice.getAdminId());
-                                                    dto.setLikeCount(likeCount.intValue()); // int 변환
+                                                    dto.setLikeCount(likeCount.intValue());
                                                     dto.setLiked(liked);
                                                     return dto;
                                                 })
@@ -50,12 +52,12 @@ public class NoticeService {
         notice.setTitle(dto.getTitle());
         notice.setContent(dto.getContent());
         notice.setAdminId(adminId);
+        notice.setPostType(POST_TYPE);
 
         return noticeRepository.save(notice)
                 .flatMap(this::toDto)
                 .onErrorResume(e ->
                         Mono.error(new RuntimeException("공지사항 저장 중 오류가 발생했습니다.")));
-
     }
 
     // 3. 공지사항 상세 조회
@@ -63,26 +65,24 @@ public class NoticeService {
         return noticeRepository.findById(noticeId)
                 .switchIfEmpty(Mono.error(new RuntimeException("공지사항을 찾을 수 없습니다.")))
                 .flatMap(notice ->
-                        // userId, noticeId로 좋아요 존재 여부 확인
-                        likeRepository.findByUserIdAndPostId(userId, noticeId)
+                        likeRepository.findByUserIdAndPostIdAndPostType(userId, noticeId, POST_TYPE)
                                 .flatMap(existingLike ->
-                                        likeRepository.countByPostId(noticeId)
+                                        likeRepository.countByPostIdAndPostType(noticeId, POST_TYPE)
                                                 .map(count -> {
                                                     NoticeResponseDto dto = toDtoSync(notice, count.intValue());
-                                                    dto.setLiked(true); // 유저가 좋아요를 눌렀음
+                                                    dto.setLiked(true);
                                                     return dto;
                                                 })
                                 )
                                 .switchIfEmpty(
-                                        likeRepository.countByPostId(noticeId)
+                                        likeRepository.countByPostIdAndPostType(noticeId, POST_TYPE)
                                                 .map(count -> {
                                                     NoticeResponseDto dto = toDtoSync(notice, count.intValue());
-                                                    dto.setLiked(false); // 유저가 좋아요 안 누름
+                                                    dto.setLiked(false);
                                                     return dto;
                                                 })
                                 )
                 );
-
     }
 
     // 4. 공지사항 수정(해당글 작성한 관리자만)
@@ -90,19 +90,19 @@ public class NoticeService {
         return noticeRepository.findById(noticeId)
                 .switchIfEmpty(Mono.error(new RuntimeException("공지사항을 찾을 수 없습니다")))
                 .flatMap(notice -> {
-                    // 작성자 일치 확인
                     if (!notice.getAdminId().equals(adminId)) {
                         return Mono.error(new RuntimeException("본인이 작성한 공지만 수정할 수 있습니다."));
                     }
-                    // 제목 수정 요청이 있다면
+
                     if(dto.getTitle() != null && !dto.getTitle().isBlank()){
-                        notice.setTitle(dto.getTitle()); // 제목 수정
+                        notice.setTitle(dto.getTitle());
                     }
 
-                    // 내용 수정 요청이 있다면
                     if(dto.getContent() != null && !dto.getContent().isBlank()){
-                        notice.setContent(dto.getContent()); // 내용 수정
+                        notice.setContent(dto.getContent());
                     }
+
+                    notice.setPostType(POST_TYPE);
                     return noticeRepository.save(notice);
                 })
                 .flatMap(this::toDto)
@@ -117,7 +117,7 @@ public class NoticeService {
                     if (!notice.getAdminId().equals(adminId)) {
                         return Mono.error(new RuntimeException("본인이 작성한 공지만 삭제할 수 있습니다."));
                     }
-                    return likeRepository.deleteByPostId(notice.getPostId()) // 좋아요도 같이 삭제
+                    return likeRepository.deleteByPostIdAndPostType(notice.getPostId(), POST_TYPE)
                             .then(noticeRepository.deleteById(noticeId));
                 });
     }
@@ -127,20 +127,20 @@ public class NoticeService {
         return noticeRepository.findById(noticeId)
                 .switchIfEmpty(Mono.error(new RuntimeException("공지사항을 찾을 수 없습니다.")))
                 .flatMap(notice ->
-                        likeRepository.findByUserIdAndPostId(userId, noticeId)
-                                // 이미 좋아요 눌렀으면 -> 취소
+                        likeRepository.findByUserIdAndPostIdAndPostType(userId, noticeId, POST_TYPE)
                                 .flatMap(existing ->
                                         likeRepository.delete(existing)
-                                                .thenReturn(false) // 좋아요 취소 -> liked = false
+                                                .thenReturn(false)
                                 )
-                                // 안 눌렀으면 -> 추가
                                 .switchIfEmpty(
-                                        likeRepository.save(new Like(userId, noticeId))
-                                                .thenReturn(true) // 좋아요 추가 -> liked = true
+                                        Mono.defer(() -> {
+                                            Like like = new Like(userId, noticeId); // 현재 존재하는 (userId, postId) 생성자 사용
+                                            like.setPostType(POST_TYPE);            // ← 여기서 타입 세팅
+                                            return likeRepository.save(like).thenReturn(true);
+                                        })
                                 )
-                                // 위 결과(Boolean liked)를 가져와서 count 계산
                                 .flatMap(liked ->
-                                        likeRepository.countByPostId(noticeId)
+                                        likeRepository.countByPostIdAndPostType(noticeId, POST_TYPE)
                                                 .map(count -> {
                                                     NoticeResponseDto dto = toDtoSync(notice, count.intValue());
                                                     dto.setLiked(liked);
@@ -153,7 +153,7 @@ public class NoticeService {
 
     // Entity -> Dto 변환 (비동기)
     private Mono<NoticeResponseDto> toDto(Notice notice){
-        return likeRepository.countByPostId(notice.getPostId())
+        return likeRepository.countByPostIdAndPostType(notice.getPostId(), POST_TYPE)
                 .map(count -> toDtoSync(notice, count.intValue()));
     }
 

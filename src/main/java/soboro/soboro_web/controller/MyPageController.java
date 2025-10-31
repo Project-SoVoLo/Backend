@@ -100,7 +100,6 @@ public class MyPageController {
                                                 ))));
     }
 
-    // 내가 북마크한 게시글 전체 조회 (커뮤니티 + 카드뉴스)
     @GetMapping("/bookmarks")
     public Flux<Object> getMyBookmarks() {
         return ReactiveSecurityContextHolder.getContext()
@@ -108,21 +107,21 @@ public class MyPageController {
                 .flatMapMany(userId -> myPageService.getAllBookmarks(userId));
     }
 
-    // 내가 좋아요한 게시글 전체 조회 (커뮤니티 + 공지)
-    @GetMapping("/likes")
-    public Flux<Object> getMyLikes() {
-        return ReactiveSecurityContextHolder.getContext()
-                .map(ctx -> ctx.getAuthentication().getName())
-                .flatMapMany(userId -> myPageService.getAllLikes(userId));
-    }
+        @GetMapping("/likes")
+        public Flux<Object> getMyLikes() {
+            return ReactiveSecurityContextHolder.getContext()
+                    .map(ctx -> ctx.getAuthentication().getName())
+                    .flatMapMany(userId -> myPageService.getAllLikes(userId));
+        }
 
-    //내가 작성한 게시글 조회
-    @GetMapping("/community-posts")
-    public Flux<CommunityResponseDto> getMyCommunityPosts() {
-        return ReactiveSecurityContextHolder.getContext()
-                .map(ctx -> ctx.getAuthentication().getName()) // 이메일
-                .flatMapMany(myPageService::getMyCommunityPosts);
-    }
+        @GetMapping("/community-posts")
+        public Flux<CommunityResponseDto> getMyCommunityPosts() {
+            return ReactiveSecurityContextHolder.getContext()
+                    .map(ctx -> ctx.getAuthentication().getName())
+                    .flatMapMany(userId -> myPageService.getMyCommunityPosts(userId));
+        }
+
+
 
 }
 

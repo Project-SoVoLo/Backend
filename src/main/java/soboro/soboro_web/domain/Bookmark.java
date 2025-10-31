@@ -1,6 +1,6 @@
 package soboro.soboro_web.domain;
-
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -17,6 +17,9 @@ public class Bookmark {
     private String bookmarkId;
     private String userId;
     private String postId;
+
+    private String postType;
+
 
     public Bookmark(String userId, String postId) {
         this.userId = userId;

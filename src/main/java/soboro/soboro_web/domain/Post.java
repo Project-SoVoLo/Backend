@@ -16,4 +16,6 @@ public class Post {
     private String title;
     private String content;
     private LocalDateTime date = LocalDateTime.now();
+    private long likeCount;
+    private long bookmarkCount;
 }
