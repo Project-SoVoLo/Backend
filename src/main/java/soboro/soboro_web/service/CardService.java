@@ -22,7 +22,6 @@ public class CardService {
         return cardRepository.findAll()
                 .flatMap(card ->
                         bookmarkRepository.findByUserIdAndPostIdAndPostType(userId, card.getPostId(), POST_TYPE)
-
                                 .map(b -> true)
                                 .defaultIfEmpty(false)
                                 .map(bookmarked -> toDto(card, bookmarked))
@@ -107,3 +106,4 @@ public class CardService {
         return dto;
     }
 }
+
