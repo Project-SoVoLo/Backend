@@ -1,0 +1,17 @@
+# Git & IDE
+.git
+.gitignore
+.idea
+*.iml
+.vscode
+
+# Build outputs
+build
+out
+.gradle
+
+# Local env/keys (이미지 포함 금지)
+*.env
+.env
+**/google-nlp*.json
+src/test
