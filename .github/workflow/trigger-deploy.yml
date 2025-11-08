@@ -1,0 +1,16 @@
+name: Trigger Infra Deploy
+
+on:
+  push:
+    branches: [ main ]   # main 브랜치 푸시 시 자동 트리거
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Infra deploy workflow
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.PAT_DEPLOY }}   # Personal Access Token 필요
+          repository: Project-SoVoLo/Infra
+          event-type: trigger-deploy
