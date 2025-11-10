@@ -10,6 +10,8 @@ import soboro.soboro_web.dto.CardResponseDto;
 import soboro.soboro_web.repository.BookmarkRepository;
 import soboro.soboro_web.repository.CardRepository;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class CardService {
@@ -41,7 +43,13 @@ public class CardService {
     }
 
     // 3. 카드뉴스 작성 (관리자만)
-    public Mono<Card> createCard(Card card) {
+    public Mono<Card> createCardWithImage(String title, String content, String adminId, String thumbnailUrl, List<String> imageUrls) {
+        Card card = new Card();
+        card.setTitle(title);
+        card.setContent(content);
+        card.setAdminId(adminId);
+        card.setThumbnailUrl(thumbnailUrl);
+        card.setImageUrls(imageUrls);
         card.setPostType(POST_TYPE);
         return cardRepository.save(card);
     }
@@ -105,5 +113,6 @@ public class CardService {
         dto.setBookmarked(bookmarked);
         return dto;
     }
+
 }
 
