@@ -75,7 +75,7 @@ public class ReactiveSecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.addAllowedOrigin("http://localhost:3000"); // 프론트 주소
-        config.addAllowedOrigin("http://54.180.37.128:3000");
+        config.addAllowedOrigin("http://54.180.142.67:3000");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         config.setAllowCredentials(true);
