@@ -10,6 +10,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+import java.io.File;
 import java.nio.file.Paths;
 import java.util.UUID;
 
@@ -31,7 +32,12 @@ public class S3Service {
 
         String key = folder + "/" + UUID.randomUUID() + "_" + filePart.filename();
 
-        return filePart.transferTo(Paths.get("/tmp/" + filePart.filename())) // 임시 저장
+        // 임시 저장 경로를 /app/tmp 로 변경
+        String tempDir = "/app/tmp";
+        new File(tempDir).mkdirs(); // 폴더 없으면 생성
+        String tempFilePath = tempDir + "/" + UUID.randomUUID() + "_" + filePart.filename();
+
+        return filePart.transferTo(Paths.get(tempFilePath)) // 임시 저장
                 .then(Mono.fromFuture(
                         s3Client.putObject(
                                 PutObjectRequest.builder()
@@ -39,7 +45,7 @@ public class S3Service {
                                         .key(key)
                                         .contentType("image/jpeg")
                                         .build(),
-                                AsyncRequestBody.fromFile(Paths.get("/tmp/" + filePart.filename()))
+                                AsyncRequestBody.fromFile(Paths.get(tempFilePath))
                         )
                 ))
                 .thenReturn("https://" + bucketName + ".s3." + region + ".amazonaws.com/" + key);
