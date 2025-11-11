@@ -5,12 +5,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 
@@ -24,30 +28,52 @@ public class S3Service {
     @Value("${cloud.aws.region.static}")
     private String region;
 
+    @Value("${cloud.aws.credentials.access-key:}") // 로컬에서는 .env로 주입
+    private String accessKey;
+
+    @Value("${cloud.aws.credentials.secret-key:}")
+    private String secretKey;
+
     public Mono<String> uploadFile(FilePart filePart, String folder) {
-        // IAM Role 기반 인증 (Access Key 불필요)
-        S3AsyncClient s3Client = S3AsyncClient.builder()
-                .region(Region.of(region))
-                .build();
+        S3AsyncClient s3Client;
+
+        //  로컬에서는 access/secret 키 사용, EC2는 IAM Role 자동 사용
+        if (!accessKey.isBlank() && !secretKey.isBlank()) {
+            s3Client = S3AsyncClient.builder()
+                    .region(Region.of(region))
+                    .credentialsProvider(
+                            StaticCredentialsProvider.create(
+                                    AwsBasicCredentials.create(accessKey, secretKey)
+                            )
+                    )
+                    .build();
+        } else {
+            s3Client = S3AsyncClient.builder()
+                    .region(Region.of(region))
+                    .credentialsProvider(DefaultCredentialsProvider.create())
+                    .build();
+        }
 
         String key = folder + "/" + UUID.randomUUID() + "_" + filePart.filename();
+        Path tempFilePath = Paths.get(System.getProperty("java.io.tmpdir"), UUID.randomUUID() + "_" + filePart.filename());
 
-        // 임시 저장 경로를 /app/tmp 로 변경
-        String tempDir = "/app/tmp";
-        new File(tempDir).mkdirs(); // 폴더 없으면 생성
-        String tempFilePath = tempDir + "/" + UUID.randomUUID() + "_" + filePart.filename();
-
-        return filePart.transferTo(Paths.get(tempFilePath)) // 임시 저장
-                .then(Mono.fromFuture(
-                        s3Client.putObject(
-                                PutObjectRequest.builder()
-                                        .bucket(bucketName)
-                                        .key(key)
-                                        .contentType("image/jpeg")
-                                        .build(),
-                                AsyncRequestBody.fromFile(Paths.get(tempFilePath))
+        return filePart.transferTo(tempFilePath)
+                .then(Mono.defer(() ->
+                        Mono.fromFuture(
+                                s3Client.putObject(
+                                        PutObjectRequest.builder()
+                                                .bucket(bucketName)
+                                                .key(key)
+                                                .contentType("image/jpeg")
+                                                .build(),
+                                        AsyncRequestBody.fromFile(tempFilePath)
+                                )
                         )
                 ))
-                .thenReturn("https://" + bucketName + ".s3." + region + ".amazonaws.com/" + key);
+                .then(Mono.fromCallable(() -> {
+                    File f = tempFilePath.toFile();
+                    if (f.exists()) f.delete();
+                    return "https://" + bucketName + ".s3." + region + ".amazonaws.com/" + key;
+                }));
     }
 }
