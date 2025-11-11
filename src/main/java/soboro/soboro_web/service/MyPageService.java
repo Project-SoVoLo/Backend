@@ -71,11 +71,17 @@ public class MyPageService {
     //내가 쓴 글 조회
     public Flux<CommunityResponseDto> getMyCommunityPosts(String userId) {
         return communityPostRepository.findAllByUserIdOrderByCreatedAtDesc(userId)
-                .map(this::toResponse);
+                .flatMap(p ->
+                        likeRepository.existsByUserIdAndPostIdAndPostType(userId, p.getId(), COMMUNITY_TYPE)
+                                .zipWith(bookmarkRepository.existsByUserIdAndPostIdAndPostType(userId, p.getId(), COMMUNITY_TYPE))
+                                .map(t -> toResponse(p, t.getT1(), t.getT2())) // ← viewer 상태 세팅
+                );
     }
 
 
-    private CommunityResponseDto toResponse(CommunityPost p) {
+
+
+    private CommunityResponseDto toResponse(CommunityPost p, boolean likedByMe, boolean bookmarkedByMe) {
         CommunityResponseDto dto = new CommunityResponseDto();
         dto.setId(p.getId());
         dto.setTitle(p.getTitle());
@@ -84,9 +90,10 @@ public class MyPageService {
         dto.setLikeCount(p.getLikeCount());
         dto.setBookmarkCount(p.getBookmarkCount());
         dto.setCommentCount(p.getCommentCount());
+        dto.setLikedByMe(likedByMe);
+        dto.setBookmarkedByMe(bookmarkedByMe);
         dto.setCreatedAt(p.getCreatedAt());
         dto.setUpdatedAt(p.getUpdatedAt());
-        // 작성자 본인 목록이라 likedByMe/bookmarkedByMe 계산은 생략(필요하면 계산해서 세팅)
         return dto;
     }
 }
