@@ -18,6 +18,7 @@ public class CardService {
     private final CardRepository cardRepository;
     private final BookmarkRepository bookmarkRepository;
     private static final String POST_TYPE = "card";
+    private final S3Service s3Service;
 
     // 1. 전체 카드뉴스 목록 (로그인 사용자 기준 북마크 여부 포함)
     public Flux<CardResponseDto> getAllCards(String userId) {
@@ -56,8 +57,27 @@ public class CardService {
 
     // 4. 카드뉴스 삭제 (관리자만)
     public Mono<Void> deleteCard(String id) {
-        return bookmarkRepository.deleteByPostIdAndPostType(id, POST_TYPE)
-                .then(cardRepository.deleteById(id));
+        return cardRepository.findById(id)
+                .switchIfEmpty(Mono.error(new RuntimeException("카드를 찾을 수 없습니다.")))
+                .flatMap(card -> {
+                    // 카드뉴스 존재시 S3 파일 삭제
+                    Mono<Void> deleteImages = Flux.fromIterable(
+                                    card.getImageUrls() != null ? card.getImageUrls() : List.of()
+                            )
+                            .flatMap(s3Service::deleteFile)
+                            .then();
+
+                    Mono<Void> deleteThumbnail = s3Service.deleteFile(card.getThumbnailUrl());
+
+                    // 1. S3의 카드 뉴스 이미지들 삭제
+                    return deleteImages
+                            // 2. 썸네일 삭제
+                            .then(deleteThumbnail)
+                            // 3. 북마크 삭제
+                            .then(bookmarkRepository.deleteByPostIdAndPostType(id, POST_TYPE))
+                            // 4. DB에서 카드 뉴스 삭제
+                            .then(cardRepository.deleteById(id));
+                });
     }
 
     // 5. 북마크 토글

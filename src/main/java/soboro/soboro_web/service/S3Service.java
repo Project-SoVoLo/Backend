@@ -11,6 +11,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.File;
@@ -34,6 +35,7 @@ public class S3Service {
     @Value("${cloud.aws.credentials.secret-key:}")
     private String secretKey;
 
+    // s3 버킷에 파일 업로드
     public Mono<String> uploadFile(FilePart filePart, String folder) {
         S3AsyncClient s3Client;
 
@@ -75,5 +77,42 @@ public class S3Service {
                     if (f.exists()) f.delete();
                     return "https://" + bucketName + ".s3." + region + ".amazonaws.com/" + key;
                 }));
+    }
+
+    // S3 버킷의 파일 삭제
+    public Mono<Void> deleteFile(String fileUrl){
+        if(fileUrl == null || fileUrl.isBlank()){
+            return Mono.empty();
+        }
+
+        // S3 key 추출
+        String key = fileUrl.replace("https://" + bucketName + ".s3." + region + ".amazonaws.com/", "");
+
+        S3AsyncClient s3Client;
+        if(!accessKey.isBlank() && !secretKey.isBlank()){
+            s3Client = S3AsyncClient.builder()
+                    .region(Region.of(region))
+                    .credentialsProvider(
+                            StaticCredentialsProvider.create(
+                                    AwsBasicCredentials.create(accessKey, secretKey)
+                            )
+                    )
+                    .build();
+        }else{
+            s3Client = S3AsyncClient.builder()
+                    .region(Region.of(region))
+                    .credentialsProvider(DefaultCredentialsProvider.create())
+                    .build();
+        }
+
+        // 삭제 요청
+        return Mono.fromFuture(
+                s3Client.deleteObject(
+                        DeleteObjectRequest.builder()
+                                .bucket(bucketName)
+                                .key(key)
+                                .build()
+                )
+        ).then();
     }
 }
