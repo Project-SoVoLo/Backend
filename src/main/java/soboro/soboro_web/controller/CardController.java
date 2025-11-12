@@ -91,6 +91,7 @@ public class CardController {
     @DeleteMapping("/{cardId}")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<Void>> deleteCard(@PathVariable String cardId) {
+
         return cardService.deleteCard(cardId)
                 .then(Mono.just(ResponseEntity.noContent().build()));
     }
