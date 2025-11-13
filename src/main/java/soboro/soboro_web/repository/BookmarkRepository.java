@@ -12,6 +12,8 @@ public interface BookmarkRepository extends ReactiveMongoRepository<Bookmark, St
     Mono<Void> deleteByUserIdAndPostIdAndPostType(String userId, String postId, String postType);
     // 사용자 전체 북마크 조회
     Flux<Bookmark> findAllByUserIdAndPostType(String userId, String postType);
+    Flux<Bookmark> findAllByPostType(String postType);
+
     //북마크 개수 카운트
     Mono<Long> countByPostIdAndPostType(String postId, String postType);
     //연쇄 삭제

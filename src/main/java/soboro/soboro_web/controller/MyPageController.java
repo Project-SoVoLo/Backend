@@ -106,21 +106,19 @@ public class MyPageController {
                 .map(ctx -> ctx.getAuthentication().getName()) // email
                 .flatMapMany(email ->
                         userRepository.findByUserEmail(email)
-                                .flatMapMany(u -> myPageService.getAllBookmarks(u.getUserId()))
+                                .flatMapMany(u -> myPageService.getAllBookmarks(u.getUserId(), email))
                 );
     }
 
-        @GetMapping("/likes")
-        public Flux<Object> getMyLikes() {
-            return ReactiveSecurityContextHolder.getContext()
-                    .map(ctx -> ctx.getAuthentication().getName()) // email
-                    .flatMapMany(email ->
-                            userRepository.findByUserEmail(email)
-                                    .flatMapMany(u -> myPageService.getAllLikes(u.getUserId()))
-                    );
-        }
+    @GetMapping("/likes")
+    public Flux<Object> getMyLikes() {
+        return ReactiveSecurityContextHolder.getContext()
+                .map(ctx -> ctx.getAuthentication().getName()) // 🔐 email
+                .flatMapMany(email -> myPageService.getAllLikes(email));
+    }
 
-        @GetMapping("/community-posts")
+
+    @GetMapping("/community-posts")
         public Flux<CommunityResponseDto> getMyCommunityPosts() {
             return ReactiveSecurityContextHolder.getContext()
                     .map(ctx -> ctx.getAuthentication().getName()) // email
