@@ -51,6 +51,7 @@ public class InquiryDto {
             String inquiryId,
             String title,
             String content,
+            String author,
             List<CommentDto> comments
     ) {}
 

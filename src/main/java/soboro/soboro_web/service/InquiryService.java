@@ -68,12 +68,21 @@ public class InquiryService {
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
                 .flatMap(i -> checkPassword(i, req.password()).thenReturn(i))
                 .map(i -> new InquiryDto.ReadRes(
-                        i.getId(), i.getTitle(), i.getContent(),
+                        i.getId(),
+                        i.getTitle(),
+                        i.getContent(),
+                        i.getAuthor(),
                         i.getComments().stream()
-                                .map(c -> new InquiryDto.CommentDto(c.getUserId(), c.getUserName(), c.getContent(), c.getDate().toString()))
+                                .map(c -> new InquiryDto.CommentDto(
+                                        c.getUserId(),
+                                        c.getUserName(),
+                                        c.getContent(),
+                                        c.getDate().toString()
+                                ))
                                 .toList()
                 ));
     }
+
 
     // 댓글 작성하기
     public Mono<InquiryDto.CommentCreateRes> addComment(String id, InquiryDto.CommentCreateReq req) {

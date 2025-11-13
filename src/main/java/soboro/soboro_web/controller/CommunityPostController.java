@@ -15,9 +15,16 @@ import soboro.soboro_web.dto.CommentDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.server.ResponseStatusException;
-
-
+import soboro.soboro_web.domain.PostBlock;
+import soboro.soboro_web.service.S3Service;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.multipart.FilePart;
 import java.net.URI;
+import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/community-posts")
@@ -25,6 +32,7 @@ import java.net.URI;
 public class CommunityPostController {
 
     private final CommunityPostService service;
+    private final S3Service s3Service;
 
     @GetMapping
     public Flux<CommunityResponseDto> getAll(Authentication authentication) {
@@ -43,29 +51,88 @@ public class CommunityPostController {
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Mono<ResponseEntity<CommunityResponseDto>> create(
-            @Valid @RequestBody CommunityRequestDto body,
+            @RequestPart("title") String title,
+            @RequestPart("blocks") String blocksJson,
+            @RequestPart(value = "images", required = false) Flux<FilePart> images,
             Authentication authentication
     ) {
         String email = requireEmail(authentication);
-        return service.create(body, email)
-                .map(res -> ResponseEntity.created(URI.create("/api/community-posts/" + res.getId())).body(res));
+
+        Mono<List<String>> imageUrlsMono = (images == null ? Flux.<FilePart>empty() : images)
+                .flatMap(file -> s3Service.uploadFile(file, "community/images"))
+                .collectList();
+
+        return imageUrlsMono.flatMap(urls -> {
+            List<PostBlock> blocks;
+            try {
+                blocks = new ObjectMapper().readValue(
+                        blocksJson, new TypeReference<List<PostBlock>>() {});
+            } catch (Exception e) {
+                return Mono.error(new IllegalArgumentException("blocks JSON 파싱 실패", e));
+            }
+
+            // 빈 image 블록에 업로드한 URL 주입 (image 블록 순서대로)
+            int idx = 0;
+            for (PostBlock b : blocks) {
+                if ("image".equalsIgnoreCase(b.getType())
+                        && (b.getUrl() == null || b.getUrl().isBlank())) {
+                    if (idx < urls.size()) {
+                        b.setUrl(urls.get(idx++));
+                    }
+                }
+            }
+
+            CommunityRequestDto dto = new CommunityRequestDto();
+            dto.setTitle(title);
+            dto.setBlocks(blocks);
+
+            return service.create(dto, email);
+        }).map(res -> ResponseEntity
+                .created(URI.create("/api/community-posts/" + res.getId()))
+                .body(res));
     }
 
     // 수정
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Mono<ResponseEntity<CommunityResponseDto>> update(
             @PathVariable String id,
-            @Valid @RequestBody CommunityRequestDto body,
+            @RequestPart("title") String title,
+            @RequestPart("blocks") String blocksJson,
+            @RequestPart(value = "images", required = false) Flux<FilePart> images,
             Authentication authentication
     ) {
         String email = requireEmail(authentication);
-        return service.update(id, body, email)
-                .map(ResponseEntity::ok)
-                .onErrorResume(IllegalAccessException.class,
-                        e -> Mono.just(ResponseEntity.status(HttpStatus.FORBIDDEN).build()))
-                .defaultIfEmpty(ResponseEntity.notFound().build());
+
+        Mono<List<String>> imageUrlsMono = (images == null ? Flux.<FilePart>empty() : images)
+                .flatMap(file -> s3Service.uploadFile(file, "community/images"))
+                .collectList();
+
+        return imageUrlsMono.flatMap(urls -> {
+
+            List<PostBlock> blocks;
+            try {
+                blocks = new ObjectMapper().readValue(blocksJson, new TypeReference<List<PostBlock>>() {});
+            } catch (Exception e) {
+                return Mono.error(new IllegalArgumentException("blocks JSON 파싱 실패", e));
+            }
+
+            int i = 0;
+            for (PostBlock b : blocks) {
+                if ("image".equalsIgnoreCase(b.getType())
+                        && (b.getUrl() == null || b.getUrl().isBlank())
+                        && i < urls.size()) {
+                    b.setUrl(urls.get(i++));
+                }
+            }
+
+            CommunityRequestDto dto = new CommunityRequestDto();
+            dto.setTitle(title);
+            dto.setBlocks(blocks);
+
+            return service.update(id, dto, email);
+        }).map(ResponseEntity::ok);
     }
 
     // 삭제
