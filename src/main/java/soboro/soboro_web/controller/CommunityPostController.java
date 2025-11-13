@@ -26,11 +26,10 @@ public class CommunityPostController {
 
     private final CommunityPostService service;
 
-    //조회
     @GetMapping
     public Flux<CommunityResponseDto> getAll(Authentication authentication) {
-        String userIdOrNull = (authentication != null) ? authentication.getName() : null;
-        return service.getAll(userIdOrNull);
+        String loginEmailOrNull = (authentication != null) ? authentication.getName() : null;
+        return service.getAll(loginEmailOrNull);
     }
 
     @GetMapping("/{id}")
@@ -38,20 +37,19 @@ public class CommunityPostController {
             @PathVariable String id,
             Authentication authentication) {
 
-        String userIdOrNull = (authentication != null) ? authentication.getName() : null;
-        return service.getById(id, userIdOrNull)
+        String loginEmailOrNull = (authentication != null) ? authentication.getName() : null;
+        return service.getById(id, loginEmailOrNull)
                 .map(ResponseEntity::ok)
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
-    // 생성
     @PostMapping
     public Mono<ResponseEntity<CommunityResponseDto>> create(
             @Valid @RequestBody CommunityRequestDto body,
             Authentication authentication
     ) {
-        String userId = requireUserId(authentication);
-        return service.create(body, userId)
+        String email = requireEmail(authentication);
+        return service.create(body, email)
                 .map(res -> ResponseEntity.created(URI.create("/api/community-posts/" + res.getId())).body(res));
     }
 
@@ -62,8 +60,8 @@ public class CommunityPostController {
             @Valid @RequestBody CommunityRequestDto body,
             Authentication authentication
     ) {
-        String userId = requireUserId(authentication);
-        return service.update(id, body, userId)
+        String email = requireEmail(authentication);
+        return service.update(id, body, email)
                 .map(ResponseEntity::ok)
                 .onErrorResume(IllegalAccessException.class,
                         e -> Mono.just(ResponseEntity.status(HttpStatus.FORBIDDEN).build()))
@@ -74,11 +72,11 @@ public class CommunityPostController {
     @DeleteMapping("/{id}")
     public Mono<ResponseEntity<Void>> delete(@PathVariable String id,
                                              Authentication authentication) {
-        String userId = requireUserId(authentication);
+        String email = requireEmail(authentication);
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
 
-        return service.delete(id, userId, isAdmin)
+        return service.delete(id, email, isAdmin)
                 .then(Mono.just(ResponseEntity.noContent().<Void>build()))
                 .onErrorResume(IllegalAccessException.class,
                         e -> Mono.just(ResponseEntity.status(HttpStatus.FORBIDDEN).<Void>build()));
@@ -88,16 +86,16 @@ public class CommunityPostController {
     @PostMapping("/{id}/like")
     public Mono<ResponseEntity<Boolean>> toggleLike(@PathVariable String id,
                                                     Authentication authentication) {
-        String userId = requireUserId(authentication);
-        return service.toggleLike(userId, id).map(ResponseEntity::ok);
+        String email = requireEmail(authentication);
+        return service.toggleLikeByEmail(email, id).map(ResponseEntity::ok);
     }
 
     // 북마크
     @PostMapping("/{id}/bookmark")
     public Mono<ResponseEntity<Boolean>> toggleBookmark(@PathVariable String id,
                                                         Authentication authentication) {
-        String userId = requireUserId(authentication);
-        return service.toggleBookmark(userId, id).map(ResponseEntity::ok);
+        String email = requireEmail(authentication);
+        return service.toggleBookmarkByEmail(email, id).map(ResponseEntity::ok);
     }
 
     // 댓글
@@ -111,8 +109,8 @@ public class CommunityPostController {
     public Mono<CommentDto.Item> createComment(@PathVariable String postId,
                                                Authentication authentication,
                                                @Valid @RequestBody CommentDto.CreateReq req) {
-        String userId = requireUserId(authentication);
-        return service.addComment(postId, userId, req);
+        String email = requireEmail(authentication);
+        return service.addComment(postId, email, req);
     }
 
     @PutMapping("/{postId}/comments/{commentId}")
@@ -120,29 +118,29 @@ public class CommunityPostController {
                                                @PathVariable String commentId,
                                                Authentication authentication,
                                                @Valid @RequestBody CommentDto.UpdateReq req) {
-        String userId = requireUserId(authentication);
-        return service.updateComment(commentId, userId, req);
+        String email = requireEmail(authentication);
+        return service.updateComment(commentId, email, req);
     }
 
     @DeleteMapping("/{postId}/comments/{commentId}")
     public Mono<ResponseEntity<CommentDto.MessageRes>> deleteComment(@PathVariable String postId,
                                                                      @PathVariable String commentId,
                                                                      Authentication authentication) {
-        String userId = requireUserId(authentication);
+        String email = requireEmail(authentication);
         boolean isAdmin = authentication != null &&
                 authentication.getAuthorities().stream()
                         .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
-        return service.deleteComment(commentId, userId, isAdmin)
+        return service.deleteComment(commentId, email, isAdmin)
                 .map(ResponseEntity::ok)
                 .onErrorResume(IllegalAccessException.class,
                         e -> Mono.just(ResponseEntity.status(HttpStatus.FORBIDDEN).build()));
     }
 
-    // helper
-    private String requireUserId(Authentication authentication) {
+
+    private String requireEmail(Authentication authentication) {
         if (authentication == null || authentication.getName() == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         }
-        return authentication.getName();
+        return authentication.getName(); // principal=email
     }
 }
