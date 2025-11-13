@@ -16,6 +16,8 @@ import soboro.soboro_web.repository.NoticeRepository;
 import soboro.soboro_web.repository.CommunityPostRepository;
 import soboro.soboro_web.repository.UserRepository;
 import soboro.soboro_web.dto.CommunityResponseDto;
+import soboro.soboro_web.domain.User;
+
 
 @Service
 @RequiredArgsConstructor
@@ -31,40 +33,55 @@ public class MyPageService {
     private static final String CARD_TYPE = "card";
     private static final String NOTICE_TYPE = "notice";
 
+public Flux<Object> getAllBookmarks(String userId, String email) {
 
-    public Flux<Object> getAllBookmarks(String userId) {
-        Flux<String> cardIds = bookmarkRepository.findAllByUserIdAndPostType(userId, CARD_TYPE)
-                .map(Bookmark::getPostId)
-                .distinct();
-        Flux<Card> bookmarkedCards = cardIds.flatMap(cardRepository::findById);
+    //카드뉴스 북마크
+    Flux<String> cardIds = bookmarkRepository.findAllByPostType(CARD_TYPE)
+            .filter(b -> b.getUserId().equals(userId) || b.getUserId().equals(email))
+            .map(Bookmark::getPostId)
+            .distinct();
 
-        Flux<String> communityIds = bookmarkRepository.findAllByUserIdAndPostType(userId, COMMUNITY_TYPE)
-                .map(Bookmark::getPostId)
-                .distinct();
-        Flux<CommunityPost> bookmarkedCommunities = communityIds.flatMap(communityPostRepository::findById);
+    Flux<Card> bookmarkedCards = cardIds.flatMap(cardRepository::findById);
 
-        return Flux.merge(
-                bookmarkedCards.cast(Object.class),
-                bookmarkedCommunities.cast(Object.class)
+    //커뮤니티 북마크
+    Flux<String> communityIds = bookmarkRepository
+            .findAllByUserIdAndPostType(userId, COMMUNITY_TYPE)
+            .map(Bookmark::getPostId)
+            .distinct();
+
+    Flux<CommunityPost> bookmarkedCommunities =
+            communityIds.flatMap(communityPostRepository::findById);
+
+    return Flux.merge(
+            bookmarkedCards.cast(Object.class),
+            bookmarkedCommunities.cast(Object.class)
+    );
+}
+
+    public Flux<Object> getAllLikes(String email) {
+
+        //공지사항 좋아요
+        Flux<Object> likedNotices = likeRepository.findAllByUserIdAndPostType(email, NOTICE_TYPE)
+                .map(Like::getPostId)
+                .distinct()
+                .flatMap(noticeRepository::findById)   // postId → Notice
+                .cast(Object.class);
+
+        //커뮤니티 좋아요
+        Mono<String> userIdMono = userRepository.findByUserEmail(email)
+                .map(User::getUserId);
+
+        Flux<Object> likedCommunities = userIdMono.flatMapMany(userId ->
+                likeRepository.findAllByUserIdAndPostType(userId, COMMUNITY_TYPE)
+                        .map(Like::getPostId)
+                        .distinct()
+                        .flatMap(communityPostRepository::findById)  // postId → CommunityPost
+                        .cast(Object.class)
         );
+        return Flux.merge(likedNotices, likedCommunities);
     }
 
-    public Flux<Object> getAllLikes(String userId) {
-        Flux<String> noticeIds = likeRepository.findAllByUserIdAndPostType(userId, NOTICE_TYPE)
-                .map(Like::getPostId)
-                .distinct();
-        Flux<Notice> likedNotices = noticeIds.flatMap(noticeRepository::findById);
 
-        Flux<String> communityIds = likeRepository.findAllByUserIdAndPostType(userId, COMMUNITY_TYPE)
-                .map(Like::getPostId)
-                .distinct();
-        Flux<CommunityPost> likedCommunities = communityIds.flatMap(communityPostRepository::findById);
-
-        return Flux.merge(
-                likedNotices.cast(Object.class),
-                likedCommunities.cast(Object.class)
-        );
-    }
 
 
 
