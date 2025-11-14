@@ -36,7 +36,8 @@ public class CommunityPostController {
 
     @GetMapping
     public Flux<CommunityResponseDto> getAll(Authentication authentication) {
-        String loginEmailOrNull = (authentication != null) ? authentication.getName() : null;
+        boolean admin = isAdmin(authentication);
+        String loginEmailOrNull = (!admin && authentication != null) ? authentication.getName() : null;
         return service.getAll(loginEmailOrNull);
     }
 
@@ -44,8 +45,9 @@ public class CommunityPostController {
     public Mono<ResponseEntity<CommunityResponseDto>> getOne(
             @PathVariable String id,
             Authentication authentication) {
+        boolean admin = isAdmin(authentication);
 
-        String loginEmailOrNull = (authentication != null) ? authentication.getName() : null;
+        String loginEmailOrNull = (!admin && authentication != null) ? authentication.getName() : null;
         return service.getById(id, loginEmailOrNull)
                 .map(ResponseEntity::ok)
                 .defaultIfEmpty(ResponseEntity.notFound().build());
@@ -59,6 +61,7 @@ public class CommunityPostController {
             Authentication authentication
     ) {
         String email = requireEmail(authentication);
+        boolean admin = isAdmin(authentication);
 
         Mono<List<String>> imageUrlsMono = (images == null ? Flux.<FilePart>empty() : images)
                 .flatMap(file -> s3Service.uploadFile(file, "community/images"))
@@ -88,7 +91,7 @@ public class CommunityPostController {
             dto.setTitle(title);
             dto.setBlocks(blocks);
 
-            return service.create(dto, email);
+            return service.create(dto, email, admin);
         }).map(res -> ResponseEntity
                 .created(URI.create("/api/community-posts/" + res.getId()))
                 .body(res));
@@ -104,6 +107,7 @@ public class CommunityPostController {
             Authentication authentication
     ) {
         String email = requireEmail(authentication);
+        boolean admin = isAdmin(authentication);
 
         Mono<List<String>> imageUrlsMono = (images == null ? Flux.<FilePart>empty() : images)
                 .flatMap(file -> s3Service.uploadFile(file, "community/images"))
@@ -131,7 +135,7 @@ public class CommunityPostController {
             dto.setTitle(title);
             dto.setBlocks(blocks);
 
-            return service.update(id, dto, email);
+            return service.update(id, dto, email,admin);
         }).map(ResponseEntity::ok);
     }
 
@@ -210,4 +214,11 @@ public class CommunityPostController {
         }
         return authentication.getName(); // principal=email
     }
+    //관리자 확인
+    private boolean isAdmin(Authentication authentication) {
+        return authentication != null &&
+                authentication.getAuthorities().stream()
+                        .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
+
 }

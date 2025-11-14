@@ -30,6 +30,7 @@ public class CommunityPostService {
     private final LikeRepository likeRepo;
     private final CommentRepository commentRepo;
     private final S3Service s3Service;
+    private record AuthorInfo(String id, String nickname) {}
 
     private static final String POST_TYPE = "community";
 
@@ -67,14 +68,18 @@ public class CommunityPostService {
                                         )));
     }
 
-    public Mono<CommunityResponseDto> create(CommunityRequestDto req, String loginEmail) {
-        return loadUser(loginEmail)
-                .flatMap(u -> {
+    public Mono<CommunityResponseDto> create(CommunityRequestDto req,
+                                             String loginEmail,
+                                             boolean isAdmin) {
+
+        return resolveAuthor(loginEmail, isAdmin)
+                .flatMap(author -> {
                     CommunityPost p = new CommunityPost();
                     p.setTitle(req.getTitle());
                     p.setBlocks(req.getBlocks());
-                    p.setUserId(u.getUserId());        //DB에는 userId 저장
-                    p.setNickname(u.getNickname());
+                    p.setUserId(author.id());
+                    p.setNickname(author.nickname());
+
                     p.setLikeCount(0);
                     p.setBookmarkCount(0);
                     p.setCommentCount(0);
@@ -88,30 +93,31 @@ public class CommunityPostService {
                 .map(saved -> toResponse(saved, false, false));
     }
 
-    public Mono<CommunityResponseDto> update(String id, CommunityRequestDto req, String loginEmail) {
-        return loadUser(loginEmail)
-                .flatMap(u -> postRepo.findById(id)
+    public Mono<CommunityResponseDto> update(String id,
+                                             CommunityRequestDto req,
+                                             String loginEmail,
+                                             boolean isAdmin) {
+
+        return resolveAuthor(loginEmail, isAdmin)
+                .flatMap(author -> postRepo.findById(id)
                         .switchIfEmpty(Mono.error(new IllegalStateException("게시글이 없습니다.")))
                         .flatMap(existing -> {
-                            boolean owner = u.getUserId().equals(existing.getUserId());
+                            //관리자도 자기글만 수정
+                            boolean owner = author.id().equals(existing.getUserId());
                             if (!owner) return Mono.error(new IllegalAccessException("수정 권한이 없습니다."));
 
-                            // 1) 기존/신규 이미지 URL 집합
                             Set<String> oldImageUrls = extractImageUrls(existing);
                             Set<String> newImageUrls = extractImageUrls(req);
 
-                            // 2) 삭제 대상: old - new
                             Set<String> toDelete = oldImageUrls.stream()
                                     .filter(url -> !newImageUrls.contains(url))
                                     .collect(Collectors.toSet());
 
-                            // 3) DB 업데이트
                             existing.setTitle(req.getTitle());
                             existing.setBlocks(req.getBlocks());
                             existing.setUpdatedAt(Instant.now());
                             Mono<CommunityPost> saveMono = postRepo.save(existing);
 
-                            // 4) S3 삭제
                             Mono<Void> deleteMono = Flux.fromIterable(toDelete)
                                     .flatMap(s3Service::deleteFile)
                                     .then();
@@ -346,6 +352,13 @@ public class CommunityPostService {
 
     private Mono<String> resolveUserId(String email) {
         return loadUser(email).map(User::getUserId);
+    }
+    private Mono<AuthorInfo> resolveAuthor(String email, boolean isAdmin) {
+        if (isAdmin) {
+
+            return Mono.just(new AuthorInfo(email, "관리자"));
+        }
+        return loadUser(email).map(u -> new AuthorInfo(u.getUserId(), u.getNickname()));
     }
 }
 
