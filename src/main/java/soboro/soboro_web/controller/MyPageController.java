@@ -81,23 +81,22 @@ public class MyPageController {
     public Flux<ChatSummaryResponse> getChatSummaries() {
         return ReactiveSecurityContextHolder.getContext()
                 .map(ctx -> {
-                    String email = ctx.getAuthentication().getName();   // 디버깅용 - 현재 로그인된 사용자 조회 (이메일로 찍히는지)
-                    System.out.println("현재 사용자 이메일: "+ email);
+                    String email = ctx.getAuthentication().getName();// 디버깅용 - 현재 로그인된 사용자 조회 (이메일로 찍히는지)
+                    System.out.println("현재 사용자 이메일: " + email);
                     return email;
                 })
                 .flatMapMany(userEmail ->
                         chatSummaryService.getEmotionRecords(userEmail)
-                                .flatMap(chatSummary ->
-                                        chatSummaryService.getEmotionRecords(userEmail)
-                                                .map(record -> new ChatSummaryResponse(
-                                                        record.getEmotionDate(),
-                                                        record.getSummary(),
-                                                        record.getFeedback(),
-                                                        record.getEmotionType().getKorean(),
-                                                        record.getEmotionType().getColorCode(),
-                                                        record.getPhqScore(),
-                                                        record.getGoogleEmotion()
-                                                ))));
+                                .map(record -> new ChatSummaryResponse(
+                                        record.getEmotionDate(),
+                                        record.getSummary(),
+                                        record.getFeedback(),
+                                        record.getEmotionType().getKorean(),
+                                        record.getEmotionType().getColorCode(),
+                                        record.getPhqScore(),
+                                        record.getGoogleEmotion()
+                                ))
+                );
     }
 
     @GetMapping("/bookmarks")
