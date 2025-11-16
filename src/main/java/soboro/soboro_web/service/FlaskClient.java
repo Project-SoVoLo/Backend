@@ -14,7 +14,7 @@ import java.util.Map;
 @Service
 public class FlaskClient {
 
-    private final WebClient webClient = WebClient.create("http://54.180.142.67:5050");
+    private final WebClient webClient = WebClient.create("http://13.125.43.47:5050");
 
     // 입력받은 text 를 서버에 보내서 점수 예측 요청하기
     public Mono<Map<String, Object>> requestPhqPrediction(String text) {
