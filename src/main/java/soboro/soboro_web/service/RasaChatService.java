@@ -22,7 +22,7 @@ import java.util.Map;
 @Service
 public class RasaChatService {
     private final RestTemplate restTemplate = new RestTemplate();
-    private final String rasaUrl = "http://localhost:5005/webhooks/rest/webhook";
+    private final String rasaUrl = "http://54.180.142.67:5005/webhooks/rest/webhook";
 
     public List<Map<String, Object>> classifyAndSendToRasa(String message, String sender, Integer phqScore, String emotion) {
         // 클래스 분류
@@ -45,7 +45,7 @@ public class RasaChatService {
         headers.setContentType(new MediaType("application", "json", StandardCharsets.UTF_8));
 
         // 슬롯 리셋
-        String slotSetUrl = "http://localhost:5005/conversations/" + sender + "/tracker/events";
+        String slotSetUrl = "http://54.180.142.67:5005/conversations/" + sender + "/tracker/events";
         Map<String, Object> resetPayload = Map.of("event", "reset_slots");
         restTemplate.postForEntity(slotSetUrl, new HttpEntity<>(resetPayload, headers), String.class);
 
