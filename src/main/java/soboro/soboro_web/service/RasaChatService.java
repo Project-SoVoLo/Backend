@@ -22,7 +22,7 @@ import java.util.Map;
 @Service
 public class RasaChatService {
     private final RestTemplate restTemplate = new RestTemplate();
-    private final String rasaUrl = "http://54.180.142.67:5005/webhooks/rest/webhook";
+    private final String rasaUrl = "http://13.125.43.47:5005/webhooks/rest/webhook";
 
     public List<Map<String, Object>> classifyAndSendToRasa(String message, String sender, Integer phqScore, String emotion) {
         // 클래스 분류
