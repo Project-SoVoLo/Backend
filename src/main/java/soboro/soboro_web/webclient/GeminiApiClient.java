@@ -18,7 +18,7 @@ public class GeminiApiClient {
 
     public GeminiApiClient(WebClient.Builder clientBuilder) {
         this.webClient = clientBuilder
-                .baseUrl("http://localhost:5001/") // Gemini Flask 서버 주소
+                .baseUrl("http://54.180.142.67:5001/") // Gemini Flask 서버 주소
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
     }
