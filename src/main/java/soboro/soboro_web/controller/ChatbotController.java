@@ -46,7 +46,7 @@ public class ChatbotController {
         );
 
         RestTemplate restTemplate = new RestTemplate();
-        String rasaUrl = "http://54.180.142.67:5005/webhooks/rest/webhook"; // Rasa 기본 REST endpoint
+        String rasaUrl = "http://13.125.43.47:5005/webhooks/rest/webhook"; // Rasa 기본 REST endpoint
 
         ResponseEntity<List> response = restTemplate.postForEntity(rasaUrl, rasaRequest, List.class);
         Map<String, Object> result = Map.of("response", response.getBody());
@@ -90,7 +90,7 @@ public class ChatbotController {
 
                     // 4. Rasa 서버에 전달하기
                     return Mono.fromCallable(() -> {
-                        String rasaUrl = "http://54.180.142.67:8080/api/rasa/classification";
+                        String rasaUrl = "http://13.125.43.47:8080/api/rasa/classification";
                         RestTemplate restTemplate = new RestTemplate();
                         ResponseEntity<Map> response = restTemplate.postForEntity(rasaUrl, combinedData, Map.class);
 
@@ -154,7 +154,7 @@ public class ChatbotController {
                     );
 
                     RestTemplate restTemplate = new RestTemplate();
-                    String rasaUrl = "http://54.180.142.67:5005/webhooks/rest/webhook";
+                    String rasaUrl = "http://13.125.43.47:5005/webhooks/rest/webhook";
                     ResponseEntity<List> response = restTemplate.postForEntity(rasaUrl, rasaRequest, List.class);
                     return ResponseEntity.ok(Map.of("response", response.getBody()));
                 });
